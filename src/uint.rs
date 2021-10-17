@@ -34,6 +34,9 @@ mod bits;
 #[cfg(feature = "rand")]
 mod rand;
 
+#[cfg(feature = "num-traits")]
+mod num_trait_mod;
+
 use crate::{Concat, Encoding, Integer, Limb, Split};
 use core::fmt;
 use subtle::{Choice, ConditionallySelectable};

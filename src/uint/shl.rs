@@ -2,7 +2,7 @@
 
 use super::UInt;
 use crate::limb::{Inner, BIT_SIZE};
-use crate::Limb;
+use crate::{Limb,Wrapping};
 use core::ops::{Shl, ShlAssign};
 
 impl<const LIMBS: usize> UInt<LIMBS> {
@@ -38,6 +38,12 @@ impl<const LIMBS: usize> UInt<LIMBS> {
 
         Self { limbs }
     }
+}
+
+impl<const LIMBS: usize> Shl<usize> for Wrapping<UInt<LIMBS>> {
+    type Output = Self;
+
+    fn shl(self, _: usize) -> <Self as Shl<usize>>::Output { todo!() }
 }
 
 impl<const LIMBS: usize> Shl<usize> for UInt<LIMBS> {

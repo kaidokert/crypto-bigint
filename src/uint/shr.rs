@@ -1,7 +1,7 @@
 //! [`UInt`] bitwise right shift operations.
 
 use super::UInt;
-use crate::{limb, Limb};
+use crate::{limb, Limb, Wrapping};
 use core::ops::{Shr, ShrAssign};
 
 impl<const LIMBS: usize> UInt<LIMBS> {
@@ -44,6 +44,13 @@ impl<const LIMBS: usize> UInt<LIMBS> {
 
         Self { limbs }
     }
+}
+
+
+impl<const LIMBS: usize> Shr<usize> for Wrapping<UInt<LIMBS>> {
+    type Output = Self;
+
+    fn shr(self, _: usize) -> <Self as Shr<usize>>::Output { todo!() }
 }
 
 impl<const LIMBS: usize> Shr<usize> for UInt<LIMBS> {
