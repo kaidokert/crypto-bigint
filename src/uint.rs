@@ -282,6 +282,156 @@ impl<const LIMBS: usize> num_traits::One for Uint<LIMBS> {
     }
 }
 
+impl<const LIMBS: usize> num_traits::Bounded for Uint<LIMBS> {
+    fn min_value() -> Self {
+        Self::ZERO
+    }
+
+    fn max_value() -> Self {
+        Self::MAX
+    }
+}
+
+impl<const LIMBS: usize> num_traits::CheckedAdd for Uint<LIMBS> {
+    fn checked_add(&self, rhs: &Self) -> Option<Self> {
+        todo!()
+    }
+}
+
+impl<const LIMBS: usize> num_traits::CheckedSub for Uint<LIMBS> {
+    fn checked_sub(&self, rhs: &Self) -> Option<Self> {
+        todo!()
+    }
+} 
+
+impl<const LIMBS: usize> num_traits::Saturating for Uint<LIMBS> {
+    fn saturating_add(self, rhs: Self) -> Self {
+        todo!()
+    }
+
+    fn saturating_sub(self, rhs: Self) -> Self {
+        todo!()
+    }
+}
+
+impl<const LIMBS: usize> core::ops::Div for Uint<LIMBS> {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self {
+        todo!()
+    }
+}
+
+impl<const LIMBS: usize> num_traits::CheckedMul for Uint<LIMBS> {
+    fn checked_mul(&self, rhs: &Self) -> Option<Self> {
+        todo!()
+    }
+}
+
+impl<const LIMBS: usize> num_traits::CheckedDiv for Uint<LIMBS> {
+    fn checked_div(&self, rhs: &Self) -> Option<Self> {
+        todo!()
+    }
+}
+
+impl<const LIMBS: usize> num_traits::ToPrimitive for Uint<LIMBS> {
+    fn to_i64(&self) -> Option<i64> {
+        todo!()
+    }
+
+    fn to_u64(&self) -> Option<u64> {
+        todo!()
+    }
+}
+
+impl<const LIMBS: usize> num_traits::NumCast for Uint<LIMBS> {
+    fn from<T: num_traits::ToPrimitive>(n: T) -> Option<Self> {
+        todo!()
+    }
+}
+
+impl<const LIMBS: usize> core::ops::Rem for Uint<LIMBS> {
+    type Output = Self;
+
+    fn rem(self, rhs: Self) -> Self {
+        todo!()
+    }
+}
+
+impl<const LIMBS: usize> num_traits::Num for Uint<LIMBS> {
+    type FromStrRadixErr = ();
+
+    fn from_str_radix(str: &str, radix: u32) -> Result<Self, Self::FromStrRadixErr> {
+        todo!()
+    }
+}
+
+impl<const LIMBS: usize> num_traits::PrimInt for Uint<LIMBS> {
+    fn count_ones(self) -> u32 {
+        todo!()
+    }
+
+    fn count_zeros(self) -> u32 {
+        todo!()
+    }
+
+    fn leading_zeros(self) -> u32 {
+        todo!()
+    }
+
+    fn trailing_zeros(self) -> u32 {
+        todo!()
+    }
+
+    fn rotate_left(self, n: u32) -> Self {
+        todo!()
+    }
+
+    fn rotate_right(self, n: u32) -> Self {
+        todo!()
+    }
+
+    fn signed_shl(self, n: u32) -> Self {
+        todo!()
+    }
+
+    fn signed_shr(self, n: u32) -> Self {
+        todo!()
+    }
+
+    fn unsigned_shl(self, n: u32) -> Self {
+        todo!()
+    }
+
+    fn unsigned_shr(self, n: u32) -> Self {
+        todo!()
+    }
+
+    fn swap_bytes(self) -> Self {
+        todo!()
+    }
+
+    fn from_be(x: Self) -> Self {
+        todo!()
+    }
+
+    fn from_le(x: Self) -> Self {
+        todo!()
+    }
+
+    fn to_be(self) -> Self {
+        todo!()
+    }
+
+    fn to_le(self) -> Self {
+        todo!()
+    }
+
+    fn pow(self, exp: u32) -> Self {
+        todo!()
+    }
+}
+
 impl<const LIMBS: usize> fmt::Debug for Uint<LIMBS> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Uint(0x{self:X})")
