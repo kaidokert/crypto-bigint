@@ -302,7 +302,7 @@ impl<const LIMBS: usize> num_traits::CheckedSub for Uint<LIMBS> {
     fn checked_sub(&self, rhs: &Self) -> Option<Self> {
         todo!()
     }
-} 
+}
 
 impl<const LIMBS: usize> num_traits::Saturating for Uint<LIMBS> {
     fn saturating_add(self, rhs: Self) -> Self {
@@ -340,7 +340,13 @@ impl<const LIMBS: usize> num_traits::ToPrimitive for Uint<LIMBS> {
     }
 
     fn to_u64(&self) -> Option<u64> {
-        todo!()
+        let maxu64 = Self::from_u64(u64::MAX);
+        if self > &maxu64 {
+            None
+        } else {
+            let words = self.as_words();
+            Some(words[0])
+        }
     }
 }
 
@@ -428,6 +434,32 @@ impl<const LIMBS: usize> num_traits::PrimInt for Uint<LIMBS> {
     }
 
     fn pow(self, exp: u32) -> Self {
+        todo!()
+    }
+}
+
+impl<const LIMBS: usize> num_traits::Unsigned for Uint<LIMBS> {}
+
+impl<const LIMBS: usize> num_traits::ToBytes for Uint<LIMBS> {
+    type Bytes = [u8; LIMBS];
+
+    fn to_be_bytes(&self) -> Self::Bytes {
+        todo!()
+    }
+
+    fn to_le_bytes(&self) -> Self::Bytes {
+        todo!()
+    }
+}
+
+impl<const LIMBS: usize> num_traits::FromBytes for Uint<LIMBS> {
+    type Bytes = [u8; LIMBS];
+
+    fn from_be_bytes(bytes: &Self::Bytes) -> Self {
+        todo!()
+    }
+
+    fn from_le_bytes(bytes: &Self::Bytes) -> Self {
         todo!()
     }
 }
@@ -707,5 +739,20 @@ mod tests {
         let deserialized: U64 = bincode::deserialize_from(serialized.as_slice()).unwrap();
 
         assert_eq!(TEST, deserialized);
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod extra_tests {
+    use crate::{Encoding, U64};
+    use num_traits::ToPrimitive;
+
+    #[test]
+    fn test_to_u64() {
+        const TESTVAL: u64 = 0x0011223344556677;
+        let test: U64 = U64::from_u64(TESTVAL);
+        let res = test.to_u64().unwrap();
+        assert_eq!(TESTVAL, res)
     }
 }
