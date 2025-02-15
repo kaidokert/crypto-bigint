@@ -1,6 +1,7 @@
 //! [`Uint`] addition operations.
 
 use crate::{Checked, CheckedAdd, ConstChoice, Limb, Uint, Wrapping, WrappingAdd, Zero};
+use crate::OverflowingAdd;
 use core::ops::{Add, AddAssign};
 use subtle::CtOption;
 
@@ -96,6 +97,13 @@ impl<const LIMBS: usize> CheckedAdd for Uint<LIMBS> {
 impl<const LIMBS: usize> WrappingAdd for Uint<LIMBS> {
     fn wrapping_add(&self, v: &Self) -> Self {
         self.wrapping_add(v)
+    }
+}
+
+impl<const LIMBS: usize> OverflowingAdd for Uint<LIMBS> {
+    fn overflowing_add(&self, v: &Self) -> (Self, bool) {
+        let (result, carry) = self.adc(v, Limb::ZERO);
+        (result, carry.is_nonzero().into())
     }
 }
 

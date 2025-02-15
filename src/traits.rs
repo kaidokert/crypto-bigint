@@ -5,6 +5,7 @@ mod sealed;
 pub use num_traits::{
     ConstZero, WrappingAdd, WrappingMul, WrappingNeg, WrappingShl, WrappingShr, WrappingSub,
 };
+pub use num_traits::ops::overflowing::{OverflowingAdd, OverflowingSub};
 
 pub(crate) use sealed::PrecomputeInverterWithAdjuster;
 

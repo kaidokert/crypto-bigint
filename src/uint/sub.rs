@@ -2,6 +2,7 @@
 
 use super::Uint;
 use crate::{Checked, CheckedSub, ConstChoice, Limb, Wrapping, WrappingSub, Zero};
+use crate::OverflowingSub;
 use core::ops::{Sub, SubAssign};
 use subtle::CtOption;
 
@@ -98,6 +99,13 @@ impl<const LIMBS: usize> SubAssign<&Checked<Uint<LIMBS>>> for Checked<Uint<LIMBS
 impl<const LIMBS: usize> WrappingSub for Uint<LIMBS> {
     fn wrapping_sub(&self, v: &Self) -> Self {
         self.wrapping_sub(v)
+    }
+}
+
+impl<const LIMBS: usize> OverflowingSub for Uint<LIMBS> {
+    fn overflowing_sub(&self, v: &Self) -> (Self, bool) {
+        let (result, overflow) = self.sbb(v, Limb::ZERO);
+        (result, overflow.is_nonzero().into())
     }
 }
 
