@@ -59,6 +59,13 @@ impl<const LIMBS: usize> Sub<&Uint<LIMBS>> for Uint<LIMBS> {
             .expect("attempted to subtract with underflow")
     }
 }
+impl<const LIMBS: usize> Sub<Uint<LIMBS>> for &Uint<LIMBS> {
+    type Output = Uint<LIMBS>;
+
+    fn sub(self, rhs: Uint<LIMBS>) -> Self::Output {
+        (*self).sub(&rhs)
+    }
+}
 
 impl<const LIMBS: usize> SubAssign<Uint<LIMBS>> for Uint<LIMBS> {
     fn sub_assign(&mut self, rhs: Uint<LIMBS>) {
