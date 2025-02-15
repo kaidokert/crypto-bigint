@@ -883,6 +883,22 @@ impl<const LIMBS: usize> Rem<Uint<LIMBS>> for Uint<LIMBS> {
     }
 }
 
+impl<const LIMBS: usize> Rem<&Uint<LIMBS>> for Uint<LIMBS> {
+    type Output = Uint<LIMBS>;
+
+    fn rem(self, rhs: &Uint<LIMBS>) -> Self::Output {
+        &self % *rhs
+    }
+}
+
+impl<const LIMBS: usize> Rem<&Uint<LIMBS>> for &Uint<LIMBS> {
+    type Output = Uint<LIMBS>;
+
+    fn rem(self, rhs: &Uint<LIMBS>) -> Self::Output {
+        *self % *rhs
+    }
+}
+
 impl<const LIMBS: usize> RemAssign<&NonZero<Uint<LIMBS>>> for Uint<LIMBS> {
     fn rem_assign(&mut self, rhs: &NonZero<Uint<LIMBS>>) {
         *self %= *rhs
