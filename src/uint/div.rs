@@ -771,6 +771,18 @@ impl<const LIMBS: usize> DivAssign<NonZero<Uint<LIMBS>>> for Uint<LIMBS> {
     }
 }
 
+impl<const LIMBS: usize> DivAssign<Uint<LIMBS>> for Uint<LIMBS> {
+    fn div_assign(&mut self, rhs: Uint<LIMBS>) {
+        *self = *self / rhs;
+    }
+}
+
+impl <const LIMBS: usize> DivAssign<&Uint<LIMBS>> for Uint<LIMBS> {
+    fn div_assign(&mut self, rhs: &Uint<LIMBS>) {
+        *self = *self / *rhs;
+    }
+}
+
 impl<const LIMBS: usize> Div<NonZero<Uint<LIMBS>>> for Wrapping<Uint<LIMBS>> {
     type Output = Wrapping<Uint<LIMBS>>;
 
