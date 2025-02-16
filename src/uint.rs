@@ -361,7 +361,8 @@ impl<const LIMBS: usize> num_traits::ToPrimitive for Uint<LIMBS> {
 
 impl<const LIMBS: usize> num_traits::NumCast for Uint<LIMBS> {
     fn from<T: num_traits::ToPrimitive>(n: T) -> Option<Self> {
-        todo!()
+        let words = n.to_u64()?;
+        Some(Self::from_u64(words))
     }
 }
 
