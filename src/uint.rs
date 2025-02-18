@@ -310,35 +310,35 @@ impl<const LIMBS: usize> num_traits::Bounded for Uint<LIMBS> {
 }
 
 impl<const LIMBS: usize> num_traits::CheckedAdd for Uint<LIMBS> {
-    fn checked_add(&self, rhs: &Self) -> Option<Self> {
+    fn checked_add(&self, _rhs: &Self) -> Option<Self> {
         todo!()
     }
 }
 
 impl<const LIMBS: usize> num_traits::CheckedSub for Uint<LIMBS> {
-    fn checked_sub(&self, rhs: &Self) -> Option<Self> {
+    fn checked_sub(&self, _rhs: &Self) -> Option<Self> {
         todo!()
     }
 }
 
 impl<const LIMBS: usize> num_traits::Saturating for Uint<LIMBS> {
-    fn saturating_add(self, rhs: Self) -> Self {
+    fn saturating_add(self, _rhs: Self) -> Self {
         todo!()
     }
 
-    fn saturating_sub(self, rhs: Self) -> Self {
+    fn saturating_sub(self, _rhs: Self) -> Self {
         todo!()
     }
 }
 
 impl<const LIMBS: usize> num_traits::CheckedMul for Uint<LIMBS> {
-    fn checked_mul(&self, rhs: &Self) -> Option<Self> {
+    fn checked_mul(&self, _rhs: &Self) -> Option<Self> {
         todo!()
     }
 }
 
 impl<const LIMBS: usize> num_traits::CheckedDiv for Uint<LIMBS> {
-    fn checked_div(&self, rhs: &Self) -> Option<Self> {
+    fn checked_div(&self, _rhs: &Self) -> Option<Self> {
         todo!()
     }
 }
@@ -354,7 +354,7 @@ impl<const LIMBS: usize> num_traits::ToPrimitive for Uint<LIMBS> {
             None
         } else {
             let words = self.as_words();
-            Some(words[0])
+            Some(words[0].into())
         }
     }
 }
@@ -383,27 +383,27 @@ impl<const LIMBS: usize> num_traits::PrimInt for Uint<LIMBS> {
         todo!()
     }
 
-    fn rotate_left(self, n: u32) -> Self {
+    fn rotate_left(self, _n: u32) -> Self {
         todo!()
     }
 
-    fn rotate_right(self, n: u32) -> Self {
+    fn rotate_right(self, _n: u32) -> Self {
         todo!()
     }
 
-    fn signed_shl(self, n: u32) -> Self {
+    fn signed_shl(self, _n: u32) -> Self {
         todo!()
     }
 
-    fn signed_shr(self, n: u32) -> Self {
+    fn signed_shr(self, _n: u32) -> Self {
         todo!()
     }
 
-    fn unsigned_shl(self, n: u32) -> Self {
+    fn unsigned_shl(self, _n: u32) -> Self {
         todo!()
     }
 
-    fn unsigned_shr(self, n: u32) -> Self {
+    fn unsigned_shr(self, _n: u32) -> Self {
         todo!()
     }
 
@@ -411,11 +411,11 @@ impl<const LIMBS: usize> num_traits::PrimInt for Uint<LIMBS> {
         todo!()
     }
 
-    fn from_be(x: Self) -> Self {
+    fn from_be(_x: Self) -> Self {
         todo!()
     }
 
-    fn from_le(x: Self) -> Self {
+    fn from_le(_x: Self) -> Self {
         todo!()
     }
 
@@ -427,7 +427,7 @@ impl<const LIMBS: usize> num_traits::PrimInt for Uint<LIMBS> {
         todo!()
     }
 
-    fn pow(self, exp: u32) -> Self {
+    fn pow(self, _exp: u32) -> Self {
         todo!()
     }
 }
@@ -435,26 +435,87 @@ impl<const LIMBS: usize> num_traits::PrimInt for Uint<LIMBS> {
 impl<const LIMBS: usize> num_traits::Unsigned for Uint<LIMBS> {}
 
 impl<const LIMBS: usize> num_traits::ToBytes for Uint<LIMBS> {
-    type Bytes = [u8; LIMBS];
+    type Bytes = BytesHolder<LIMBS>;
 
     fn to_be_bytes(&self) -> Self::Bytes {
-        todo!()
+        let mut my_bytes= Self::Bytes { bytes: self.limbs };
+        // now reverse the mut_slice
+        my_bytes.as_byte_slice_mut().reverse();
+        my_bytes
     }
 
     fn to_le_bytes(&self) -> Self::Bytes {
-        todo!()
+        Self::Bytes { bytes: self.limbs }
     }
 }
 
+/// A helper struct to hold the bytes of a [`Uint`].
+#[derive(Hash, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct BytesHolder<const LIMBS: usize> {
+    bytes: [Limb; LIMBS],
+}
+
+impl<const LIMBS: usize> Default for BytesHolder<LIMBS> {
+    fn default() -> Self {
+        Self {
+            bytes: core::array::from_fn(|_| Limb::ZERO),
+        }
+    }
+}
+
+impl<const LIMBS: usize> BytesHolder<LIMBS> {
+    fn as_byte_slice(&self) -> &[u8] {
+        #[allow(unsafe_code)]
+        unsafe {
+            core::slice::from_raw_parts(
+                self.bytes.as_ptr() as *const u8,
+                LIMBS * size_of::<Limb>(),
+            )
+        }
+    }
+
+    fn as_byte_slice_mut(&mut self) -> &mut [u8] {
+        #[allow(unsafe_code)]
+        unsafe {
+            core::slice::from_raw_parts_mut(
+                self.bytes.as_mut_ptr() as *mut u8,
+                LIMBS * size_of::<Limb>(),
+            )
+        }
+    }
+}
+
+impl<const LIMBS: usize> core::borrow::Borrow<[u8]> for BytesHolder<LIMBS> {
+    fn borrow(&self) -> &[u8] {
+        self.as_byte_slice()
+    }
+}
+impl<const LIMBS: usize> core::borrow::BorrowMut<[u8]> for BytesHolder<LIMBS> {
+    fn borrow_mut(&mut self) -> &mut [u8] {
+        self.as_byte_slice_mut()
+    }
+}
+impl<const LIMBS: usize>  AsRef<[u8]> for BytesHolder<LIMBS> {
+    fn as_ref(&self) -> &[u8] {
+        self.as_byte_slice()
+    }
+}
+impl<const LIMBS: usize>  AsMut<[u8]> for BytesHolder<LIMBS> {
+    fn as_mut(&mut self) -> &mut [u8] {
+        self.as_byte_slice_mut()
+    }
+}
+
+
 impl<const LIMBS: usize> num_traits::FromBytes for Uint<LIMBS> {
-    type Bytes = [u8; LIMBS];
+    type Bytes = BytesHolder<LIMBS>;
 
     fn from_be_bytes(bytes: &Self::Bytes) -> Self {
-        todo!()
+        Self::from_be_slice(bytes.as_ref())
     }
 
     fn from_le_bytes(bytes: &Self::Bytes) -> Self {
-        todo!()
+        Self::from_le_slice(bytes.as_ref())
     }
 }
 
@@ -736,7 +797,7 @@ mod tests {
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod extra_tests {
-    use crate::{Encoding, U64};
+    use crate::U64;
     use num_traits::ToPrimitive;
 
     #[test]
@@ -745,5 +806,16 @@ mod extra_tests {
         let test: U64 = U64::from_u64(TESTVAL);
         let res = test.to_u64().unwrap();
         assert_eq!(TESTVAL, res)
+    }
+
+    #[test]
+    fn test_bytes_holder() {
+        // limb is u64 by default on host. on target it's u32
+
+        let mut bytes = super::BytesHolder::<3>::default();
+        // byte_slice should be 12 bytes
+        assert_eq!(bytes.as_byte_slice().len(), 3 * size_of::<super::Word>());
+        // byte_slice_mut should be 12 bytes
+        assert_eq!(bytes.as_byte_slice_mut().len(), 3 * size_of::<super::Word>());
     }
 }
