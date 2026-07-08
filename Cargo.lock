@@ -78,6 +78,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ae3f5d315924270530207e2a68396c3cc547f6dca3fbdca317cfb1a51edb593"
 
 [[package]]
+name = "c0nst"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "019024ed810d5466b603e9369a8f887ae1f0b87bb6b16d46995c062e34a5cfde"
+dependencies = [
+ "proc-macro2",
+]
+
+[[package]]
 name = "cast"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -140,6 +149,15 @@ name = "clap_lex"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
+
+[[package]]
+name = "const-num-traits"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffb81ff665ba8a7794e84d8d040e75e68bb7f1be3a072ebf9ef482f05abaae49"
+dependencies = [
+ "c0nst",
+]
 
 [[package]]
 name = "criterion"
@@ -213,6 +231,7 @@ name = "crypto-bigint"
 version = "0.7.0-pre"
 dependencies = [
  "bincode",
+ "const-num-traits",
  "criterion",
  "der",
  "hex-literal",
@@ -221,7 +240,6 @@ dependencies = [
  "num-bigint",
  "num-integer",
  "num-modular",
- "num-traits",
  "proptest",
  "rand_chacha",
  "rand_core",

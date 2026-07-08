@@ -386,19 +386,41 @@ impl<const LIMBS: usize> num_traits::NumCast for Uint<LIMBS> {
 // const-num-traits splits the bit methods out of `PrimInt` into `PrimBits`.
 impl<const LIMBS: usize> num_traits::PrimBits for Uint<LIMBS> {
     fn count_ones(self) -> u32 {
-        todo!()
+        let mut n = 0u32;
+        let mut i = 0;
+        while i < LIMBS { n += self.limbs[i].0.count_ones(); i += 1; }
+        n
     }
 
     fn count_zeros(self) -> u32 {
-        todo!()
+        let mut n = 0u32;
+        let mut i = 0;
+        while i < LIMBS { n += self.limbs[i].0.count_zeros(); i += 1; }
+        n
     }
 
     fn leading_zeros(self) -> u32 {
-        todo!()
+        let mut n = 0u32;
+        let mut i = LIMBS;
+        while i > 0 {
+            i -= 1;
+            let lz = self.limbs[i].0.leading_zeros();
+            n += lz;
+            if lz < Limb::BITS { break; }
+        }
+        n
     }
 
     fn trailing_zeros(self) -> u32 {
-        todo!()
+        let mut n = 0u32;
+        let mut i = 0;
+        while i < LIMBS {
+            let tz = self.limbs[i].0.trailing_zeros();
+            n += tz;
+            if tz < Limb::BITS { break; }
+            i += 1;
+        }
+        n
     }
 
     fn rotate_left(self, n: u32) -> Self {
@@ -455,35 +477,147 @@ impl<const LIMBS: usize> num_traits::PrimInt for Uint<LIMBS> {
 
 impl<const LIMBS: usize> num_traits::Unsigned for Uint<LIMBS> {}
 
-// ToBytes/FromBytes use Vec<u8> because [u8; LIMBS * Limb::BYTES] requires
-// `generic_const_exprs` (nightly-only). Vec<u8> is safe and works on stable.
-#[cfg(feature = "alloc")]
-impl<const LIMBS: usize> num_traits::ToBytes for Uint<LIMBS> {
-    type Bytes = alloc::vec::Vec<u8>;
+// Fixed-size byte buffer for `Uint<LIMBS>` that satisfies `NumBytes + Default + AsMut<[u8]>`.
+//
+// Stores `[Limb; LIMBS]` internally. `Default` uses `[Limb::ZERO; LIMBS]` — a const
+// expression that works for any LIMBS without requiring the standard library's
+// `Default for [T; N]` blanket (which only covers N ≤ 32). The byte view is exposed
+// via an unsafe ptr cast: `LIMBS * Limb::BYTES` bytes at the array base address.
+//
+// This unifies `ToBytes::Bytes` and `FromBytes::Bytes`, satisfying the
+// `FixedWidthUnsignedInt` bound from `rsa_heapless`.
+#[derive(Clone, Copy)]
+pub struct BytesHolder<const LIMBS: usize> {
+    limbs: [Limb; LIMBS],
+}
 
-    fn to_be_bytes(self) -> alloc::vec::Vec<u8> {
-        let mut bytes = alloc::vec::Vec::with_capacity(Limb::BYTES * LIMBS);
-        for limb in self.limbs.iter().rev() {
-            bytes.extend_from_slice(&limb.0.to_be_bytes());
-        }
-        bytes
-    }
-
-    fn to_le_bytes(self) -> alloc::vec::Vec<u8> {
-        let mut bytes = alloc::vec::Vec::with_capacity(Limb::BYTES * LIMBS);
-        for limb in self.limbs.iter() {
-            bytes.extend_from_slice(&limb.0.to_le_bytes());
-        }
-        bytes
+impl<const LIMBS: usize> Default for BytesHolder<LIMBS> {
+    fn default() -> Self {
+        Self { limbs: [Limb::ZERO; LIMBS] }
     }
 }
 
-#[cfg(feature = "alloc")]
-impl<const LIMBS: usize> num_traits::FromBytes for Uint<LIMBS> {
-    type Bytes = [u8];
+impl<const LIMBS: usize> BytesHolder<LIMBS> {
+    #[allow(unsafe_code)]
+    #[inline]
+    fn as_byte_slice(&self) -> &[u8] {
+        // SAFETY: Limb is repr(transparent) over Word (u32 or u64); the array
+        // is valid for reads of LIMBS * Limb::BYTES bytes from its base.
+        unsafe {
+            core::slice::from_raw_parts(
+                self.limbs.as_ptr() as *const u8,
+                LIMBS * Limb::BYTES,
+            )
+        }
+    }
 
-    fn from_be_bytes(bytes: &[u8]) -> Self {
-        assert_eq!(bytes.len(), Limb::BYTES * LIMBS);
+    #[allow(unsafe_code)]
+    #[inline]
+    fn as_byte_slice_mut(&mut self) -> &mut [u8] {
+        // SAFETY: same as as_byte_slice; unique access via &mut self.
+        unsafe {
+            core::slice::from_raw_parts_mut(
+                self.limbs.as_mut_ptr() as *mut u8,
+                LIMBS * Limb::BYTES,
+            )
+        }
+    }
+}
+
+impl<const LIMBS: usize> AsRef<[u8]> for BytesHolder<LIMBS> {
+    fn as_ref(&self) -> &[u8] { self.as_byte_slice() }
+}
+
+impl<const LIMBS: usize> AsMut<[u8]> for BytesHolder<LIMBS> {
+    fn as_mut(&mut self) -> &mut [u8] { self.as_byte_slice_mut() }
+}
+
+impl<const LIMBS: usize> core::borrow::Borrow<[u8]> for BytesHolder<LIMBS> {
+    fn borrow(&self) -> &[u8] { self.as_byte_slice() }
+}
+
+impl<const LIMBS: usize> core::borrow::BorrowMut<[u8]> for BytesHolder<LIMBS> {
+    fn borrow_mut(&mut self) -> &mut [u8] { self.as_byte_slice_mut() }
+}
+
+impl<const LIMBS: usize> PartialEq for BytesHolder<LIMBS> {
+    fn eq(&self, other: &Self) -> bool { self.as_byte_slice() == other.as_byte_slice() }
+}
+
+impl<const LIMBS: usize> Eq for BytesHolder<LIMBS> {}
+
+impl<const LIMBS: usize> PartialOrd for BytesHolder<LIMBS> {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<const LIMBS: usize> Ord for BytesHolder<LIMBS> {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        self.as_byte_slice().cmp(other.as_byte_slice())
+    }
+}
+
+impl<const LIMBS: usize> core::hash::Hash for BytesHolder<LIMBS> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        self.as_byte_slice().hash(state)
+    }
+}
+
+impl<const LIMBS: usize> fmt::Debug for BytesHolder<LIMBS> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "BytesHolder(")?;
+        for b in self.as_byte_slice() { write!(f, "{:02x}", b)?; }
+        write!(f, ")")
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl<const LIMBS: usize> zeroize::DefaultIsZeroes for BytesHolder<LIMBS> {}
+
+impl<const LIMBS: usize> num_traits::ToBytes for Uint<LIMBS> {
+    type Bytes = BytesHolder<LIMBS>;
+
+    fn to_be_bytes(self) -> BytesHolder<LIMBS> {
+        let mut holder = BytesHolder::default();
+        let bytes = holder.as_byte_slice_mut();
+        let limb_bytes = Limb::BYTES;
+        let mut i = 0;
+        while i < LIMBS {
+            let word_be = self.limbs[LIMBS - 1 - i].0.to_be_bytes();
+            let mut j = 0;
+            while j < limb_bytes {
+                bytes[i * limb_bytes + j] = word_be[j];
+                j += 1;
+            }
+            i += 1;
+        }
+        holder
+    }
+
+    fn to_le_bytes(self) -> BytesHolder<LIMBS> {
+        let mut holder = BytesHolder::default();
+        let bytes = holder.as_byte_slice_mut();
+        let limb_bytes = Limb::BYTES;
+        let mut i = 0;
+        while i < LIMBS {
+            let word_le = self.limbs[i].0.to_le_bytes();
+            let mut j = 0;
+            while j < limb_bytes {
+                bytes[i * limb_bytes + j] = word_le[j];
+                j += 1;
+            }
+            i += 1;
+        }
+        holder
+    }
+}
+
+impl<const LIMBS: usize> num_traits::FromBytes for Uint<LIMBS> {
+    type Bytes = BytesHolder<LIMBS>;
+
+    fn from_be_bytes(bytes: &BytesHolder<LIMBS>) -> Self {
+        let bytes = bytes.as_byte_slice();
         let mut limbs = [Limb::ZERO; LIMBS];
         let limb_bytes = Limb::BYTES;
         let mut i = 0;
@@ -501,8 +635,8 @@ impl<const LIMBS: usize> num_traits::FromBytes for Uint<LIMBS> {
         Uint::new(limbs)
     }
 
-    fn from_le_bytes(bytes: &[u8]) -> Self {
-        assert_eq!(bytes.len(), Limb::BYTES * LIMBS);
+    fn from_le_bytes(bytes: &BytesHolder<LIMBS>) -> Self {
+        let bytes = bytes.as_byte_slice();
         let mut limbs = [Limb::ZERO; LIMBS];
         let limb_bytes = Limb::BYTES;
         let mut i = 0;
@@ -707,15 +841,14 @@ impl<const LIMBS: usize> num_traits::ops::byte_slice::FromByteSlice for Uint<LIM
 }
 
 // For the signing path: `for<'a> &'a T: ToBytes<Bytes = <T as ToBytes>::Bytes>`
-#[cfg(feature = "alloc")]
 impl<const LIMBS: usize> num_traits::ToBytes for &Uint<LIMBS> {
-    type Bytes = alloc::vec::Vec<u8>;
+    type Bytes = BytesHolder<LIMBS>;
 
-    fn to_be_bytes(self) -> alloc::vec::Vec<u8> {
+    fn to_be_bytes(self) -> BytesHolder<LIMBS> {
         (*self).to_be_bytes()
     }
 
-    fn to_le_bytes(self) -> alloc::vec::Vec<u8> {
+    fn to_le_bytes(self) -> BytesHolder<LIMBS> {
         (*self).to_le_bytes()
     }
 }
