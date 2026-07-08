@@ -95,14 +95,14 @@ impl<const LIMBS: usize> CheckedAdd for Uint<LIMBS> {
 }
 
 impl<const LIMBS: usize> WrappingAdd for Uint<LIMBS> {
-    fn wrapping_add(&self, v: &Self) -> Self {
-        self.wrapping_add(v)
+    fn wrapping_add(self, v: Self) -> Self {
+        Uint::wrapping_add(&self, &v)
     }
 }
 
 impl<const LIMBS: usize> OverflowingAdd for Uint<LIMBS> {
-    fn overflowing_add(&self, v: &Self) -> (Self, bool) {
-        let (result, carry) = self.adc(v, Limb::ZERO);
+    fn overflowing_add(self, v: Self) -> (Self, bool) {
+        let (result, carry) = self.adc(&v, Limb::ZERO);
         (result, carry.is_nonzero().into())
     }
 }

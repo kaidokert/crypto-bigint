@@ -53,7 +53,7 @@ impl_shr!(i32, u32, usize);
 
 impl WrappingShr for Limb {
     #[inline]
-    fn wrapping_shr(&self, shift: u32) -> Limb {
+    fn wrapping_shr(self, shift: u32) -> Limb {
         Self(self.0.wrapping_shr(shift))
     }
 }

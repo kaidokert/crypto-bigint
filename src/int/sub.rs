@@ -5,12 +5,12 @@ use core::ops::{Sub, SubAssign};
 use num_traits::WrappingSub;
 use subtle::{Choice, ConstantTimeEq, CtOption};
 
-use crate::{Checked, CheckedSub, Int, Wrapping};
+use crate::{Checked, CheckedSub, Int, Uint, Wrapping};
 
 impl<const LIMBS: usize> CheckedSub for Int<LIMBS> {
     fn checked_sub(&self, rhs: &Self) -> CtOption<Self> {
         // Step 1. subtract operands
-        let res = Self(self.0.wrapping_sub(&rhs.0));
+        let res = Self(Uint::wrapping_sub(&self.0, &rhs.0));
 
         // Step 2. check whether underflow happened.
         // Note:
@@ -69,8 +69,8 @@ impl<const LIMBS: usize> SubAssign<&Checked<Int<LIMBS>>> for Checked<Int<LIMBS>>
 }
 
 impl<const LIMBS: usize> WrappingSub for Int<LIMBS> {
-    fn wrapping_sub(&self, v: &Self) -> Self {
-        Self(self.0.wrapping_sub(&v.0))
+    fn wrapping_sub(self, v: Self) -> Self {
+        Self(Uint::wrapping_sub(&self.0, &v.0))
     }
 }
 
@@ -89,7 +89,7 @@ mod tests {
                 0: I128::MIN.0.wrapping_add(&I128::ONE.0),
             };
             let max_minus_one = Int {
-                0: I128::MAX.0.wrapping_sub(&I128::ONE.0),
+                0: I128::MAX.0.wrapping_sub(I128::ONE.0),
             };
             let two = Int {
                 0: U128::from(2u32),
@@ -193,19 +193,19 @@ mod tests {
                 0: U128::from(2u32),
             };
             let max_minus_one = Int {
-                0: I128::MAX.0.wrapping_sub(&I128::ONE.0),
+                0: I128::MAX.0.wrapping_sub(I128::ONE.0),
             };
 
             // + sub -
-            let result = I128::ONE.wrapping_sub(&I128::MIN);
+            let result = I128::ONE.wrapping_sub(I128::MIN);
             assert_eq!(result, min_plus_one);
 
             // 0 sub -
-            let result = I128::ZERO.wrapping_sub(&I128::MIN);
+            let result = I128::ZERO.wrapping_sub(I128::MIN);
             assert_eq!(result, I128::MIN);
 
             // - sub +
-            let result = I128::MIN.wrapping_sub(&two);
+            let result = I128::MIN.wrapping_sub(two);
             assert_eq!(result, max_minus_one);
         }
     }

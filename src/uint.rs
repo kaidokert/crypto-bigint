@@ -55,6 +55,8 @@ mod array;
 pub(crate) mod boxed;
 #[cfg(feature = "rand_core")]
 mod rand;
+#[cfg(feature = "cios")]
+mod cios;
 
 /// Stack-allocated big unsigned integer.
 ///
@@ -284,6 +286,11 @@ impl<const LIMBS: usize> num_traits::Zero for Uint<LIMBS> {
         Self::ZERO
     }
 
+    // const-num-traits strips the `set_zero` default.
+    fn set_zero(&mut self) {
+        *self = Self::ZERO;
+    }
+
     fn is_zero(&self) -> bool {
         self.ct_eq(&Self::ZERO).into()
     }
@@ -294,9 +301,20 @@ impl<const LIMBS: usize> num_traits::One for Uint<LIMBS> {
         Self::ONE
     }
 
+    // const-num-traits strips the `set_one` default.
+    fn set_one(&mut self) {
+        *self = Self::ONE;
+    }
+
     fn is_one(&self) -> bool {
         self.ct_eq(&Self::ONE).into()
     }
+}
+
+// const-num-traits' `PrimBits` requires `ConstOne` (crypto-bigint already
+// impls `ConstZero`, which is a re-export of `num_traits::ConstZero`).
+impl<const LIMBS: usize> num_traits::ConstOne for Uint<LIMBS> {
+    const ONE: Self = Self::ONE;
 }
 
 impl<const LIMBS: usize> num_traits::Bounded for Uint<LIMBS> {
@@ -310,13 +328,13 @@ impl<const LIMBS: usize> num_traits::Bounded for Uint<LIMBS> {
 }
 
 impl<const LIMBS: usize> num_traits::CheckedAdd for Uint<LIMBS> {
-    fn checked_add(&self, rhs: &Self) -> Option<Self> {
+    fn checked_add(self, rhs: Self) -> Option<Self> {
         todo!()
     }
 }
 
 impl<const LIMBS: usize> num_traits::CheckedSub for Uint<LIMBS> {
-    fn checked_sub(&self, rhs: &Self) -> Option<Self> {
+    fn checked_sub(self, rhs: Self) -> Option<Self> {
         todo!()
     }
 }
@@ -332,13 +350,13 @@ impl<const LIMBS: usize> num_traits::Saturating for Uint<LIMBS> {
 }
 
 impl<const LIMBS: usize> num_traits::CheckedMul for Uint<LIMBS> {
-    fn checked_mul(&self, rhs: &Self) -> Option<Self> {
+    fn checked_mul(self, rhs: Self) -> Option<Self> {
         todo!()
     }
 }
 
 impl<const LIMBS: usize> num_traits::CheckedDiv for Uint<LIMBS> {
-    fn checked_div(&self, rhs: &Self) -> Option<Self> {
+    fn checked_div(self, rhs: Self) -> Option<Self> {
         todo!()
     }
 }
@@ -365,7 +383,8 @@ impl<const LIMBS: usize> num_traits::NumCast for Uint<LIMBS> {
     }
 }
 
-impl<const LIMBS: usize> num_traits::PrimInt for Uint<LIMBS> {
+// const-num-traits splits the bit methods out of `PrimInt` into `PrimBits`.
+impl<const LIMBS: usize> num_traits::PrimBits for Uint<LIMBS> {
     fn count_ones(self) -> u32 {
         todo!()
     }
@@ -426,6 +445,9 @@ impl<const LIMBS: usize> num_traits::PrimInt for Uint<LIMBS> {
         todo!()
     }
 
+}
+
+impl<const LIMBS: usize> num_traits::PrimInt for Uint<LIMBS> {
     fn pow(self, exp: u32) -> Self {
         todo!()
     }
@@ -433,27 +455,69 @@ impl<const LIMBS: usize> num_traits::PrimInt for Uint<LIMBS> {
 
 impl<const LIMBS: usize> num_traits::Unsigned for Uint<LIMBS> {}
 
+// ToBytes/FromBytes use Vec<u8> because [u8; LIMBS * Limb::BYTES] requires
+// `generic_const_exprs` (nightly-only). Vec<u8> is safe and works on stable.
+#[cfg(feature = "alloc")]
 impl<const LIMBS: usize> num_traits::ToBytes for Uint<LIMBS> {
-    type Bytes = [u8; LIMBS];
+    type Bytes = alloc::vec::Vec<u8>;
 
-    fn to_be_bytes(&self) -> Self::Bytes {
-        todo!()
+    fn to_be_bytes(self) -> alloc::vec::Vec<u8> {
+        let mut bytes = alloc::vec::Vec::with_capacity(Limb::BYTES * LIMBS);
+        for limb in self.limbs.iter().rev() {
+            bytes.extend_from_slice(&limb.0.to_be_bytes());
+        }
+        bytes
     }
 
-    fn to_le_bytes(&self) -> Self::Bytes {
-        todo!()
+    fn to_le_bytes(self) -> alloc::vec::Vec<u8> {
+        let mut bytes = alloc::vec::Vec::with_capacity(Limb::BYTES * LIMBS);
+        for limb in self.limbs.iter() {
+            bytes.extend_from_slice(&limb.0.to_le_bytes());
+        }
+        bytes
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<const LIMBS: usize> num_traits::FromBytes for Uint<LIMBS> {
-    type Bytes = [u8; LIMBS];
+    type Bytes = [u8];
 
-    fn from_be_bytes(bytes: &Self::Bytes) -> Self {
-        todo!()
+    fn from_be_bytes(bytes: &[u8]) -> Self {
+        assert_eq!(bytes.len(), Limb::BYTES * LIMBS);
+        let mut limbs = [Limb::ZERO; LIMBS];
+        let limb_bytes = Limb::BYTES;
+        let mut i = 0;
+        while i < LIMBS {
+            let start = i * limb_bytes;
+            let mut word: Word = 0;
+            let mut j = 0;
+            while j < limb_bytes {
+                word = (word << 8) | (bytes[start + j] as Word);
+                j += 1;
+            }
+            limbs[LIMBS - 1 - i] = Limb(word);
+            i += 1;
+        }
+        Uint::new(limbs)
     }
 
-    fn from_le_bytes(bytes: &Self::Bytes) -> Self {
-        todo!()
+    fn from_le_bytes(bytes: &[u8]) -> Self {
+        assert_eq!(bytes.len(), Limb::BYTES * LIMBS);
+        let mut limbs = [Limb::ZERO; LIMBS];
+        let limb_bytes = Limb::BYTES;
+        let mut i = 0;
+        while i < LIMBS {
+            let start = i * limb_bytes;
+            let mut word: Word = 0;
+            let mut j = 0;
+            while j < limb_bytes {
+                word |= (bytes[start + j] as Word) << (j * 8);
+                j += 1;
+            }
+            limbs[i] = Limb(word);
+            i += 1;
+        }
+        Uint::new(limbs)
     }
 }
 

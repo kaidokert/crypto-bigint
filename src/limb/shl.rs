@@ -54,7 +54,7 @@ impl_shl!(i32, u32, usize);
 
 impl WrappingShl for Limb {
     #[inline]
-    fn wrapping_shl(&self, shift: u32) -> Limb {
+    fn wrapping_shl(self, shift: u32) -> Limb {
         Self(self.0.wrapping_shl(shift))
     }
 }

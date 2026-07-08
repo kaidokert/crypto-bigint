@@ -83,8 +83,8 @@ impl SubAssign<&Checked<Limb>> for Checked<Limb> {
 
 impl WrappingSub for Limb {
     #[inline]
-    fn wrapping_sub(&self, v: &Self) -> Self {
-        self.wrapping_sub(*v)
+    fn wrapping_sub(self, v: Self) -> Self {
+        (&self).wrapping_sub(v)
     }
 }
 

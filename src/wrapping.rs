@@ -20,165 +20,165 @@ use serdect::serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Wrapping<T>(pub T);
 
-impl<T: WrappingAdd> Add<Self> for Wrapping<T> {
+impl<T: WrappingAdd + Add<Output = T> + Clone> Add<Self> for Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
-        Wrapping(self.0.wrapping_add(&rhs.0))
+        Wrapping(self.0.clone().wrapping_add(rhs.0.clone()))
     }
 }
 
-impl<T: WrappingAdd> Add<&Self> for Wrapping<T> {
+impl<T: WrappingAdd + Add<Output = T> + Clone> Add<&Self> for Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn add(self, rhs: &Self) -> Self::Output {
-        Wrapping(self.0.wrapping_add(&rhs.0))
+        Wrapping(self.0.clone().wrapping_add(rhs.0.clone()))
     }
 }
 
-impl<T: WrappingAdd> Add<Wrapping<T>> for &Wrapping<T> {
+impl<T: WrappingAdd + Add<Output = T> + Clone> Add<Wrapping<T>> for &Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn add(self, rhs: Wrapping<T>) -> Self::Output {
-        Wrapping(self.0.wrapping_add(&rhs.0))
+        Wrapping(self.0.clone().wrapping_add(rhs.0.clone()))
     }
 }
 
-impl<T: WrappingAdd> Add<&Wrapping<T>> for &Wrapping<T> {
+impl<T: WrappingAdd + Add<Output = T> + Clone> Add<&Wrapping<T>> for &Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn add(self, rhs: &Wrapping<T>) -> Self::Output {
-        Wrapping(self.0.wrapping_add(&rhs.0))
+        Wrapping(self.0.clone().wrapping_add(rhs.0.clone()))
     }
 }
 
-impl<T: WrappingSub> Sub<Self> for Wrapping<T> {
+impl<T: WrappingSub + Sub<Output = T> + Clone> Sub<Self> for Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
-        Wrapping(self.0.wrapping_sub(&rhs.0))
+        Wrapping(self.0.clone().wrapping_sub(rhs.0.clone()))
     }
 }
 
-impl<T: WrappingSub> Sub<&Self> for Wrapping<T> {
+impl<T: WrappingSub + Sub<Output = T> + Clone> Sub<&Self> for Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn sub(self, rhs: &Self) -> Self::Output {
-        Wrapping(self.0.wrapping_sub(&rhs.0))
+        Wrapping(self.0.clone().wrapping_sub(rhs.0.clone()))
     }
 }
 
-impl<T: WrappingSub> Sub<Wrapping<T>> for &Wrapping<T> {
+impl<T: WrappingSub + Sub<Output = T> + Clone> Sub<Wrapping<T>> for &Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn sub(self, rhs: Wrapping<T>) -> Self::Output {
-        Wrapping(self.0.wrapping_sub(&rhs.0))
+        Wrapping(self.0.clone().wrapping_sub(rhs.0.clone()))
     }
 }
 
-impl<T: WrappingSub> Sub<&Wrapping<T>> for &Wrapping<T> {
+impl<T: WrappingSub + Sub<Output = T> + Clone> Sub<&Wrapping<T>> for &Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn sub(self, rhs: &Wrapping<T>) -> Self::Output {
-        Wrapping(self.0.wrapping_sub(&rhs.0))
+        Wrapping(self.0.clone().wrapping_sub(rhs.0.clone()))
     }
 }
 
-impl<T: WrappingMul> Mul<Self> for Wrapping<T> {
+impl<T: WrappingMul + Mul<Output = T> + Clone> Mul<Self> for Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn mul(self, rhs: Self) -> Self::Output {
-        Wrapping(self.0.wrapping_mul(&rhs.0))
+        Wrapping(self.0.clone().wrapping_mul(rhs.0.clone()))
     }
 }
 
-impl<T: WrappingMul> Mul<&Self> for Wrapping<T> {
+impl<T: WrappingMul + Mul<Output = T> + Clone> Mul<&Self> for Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn mul(self, rhs: &Self) -> Self::Output {
-        Wrapping(self.0.wrapping_mul(&rhs.0))
+        Wrapping(self.0.clone().wrapping_mul(rhs.0.clone()))
     }
 }
 
-impl<T: WrappingMul> Mul<Wrapping<T>> for &Wrapping<T> {
+impl<T: WrappingMul + Mul<Output = T> + Clone> Mul<Wrapping<T>> for &Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn mul(self, rhs: Wrapping<T>) -> Self::Output {
-        Wrapping(self.0.wrapping_mul(&rhs.0))
+        Wrapping(self.0.clone().wrapping_mul(rhs.0.clone()))
     }
 }
 
-impl<T: WrappingMul> Mul<&Wrapping<T>> for &Wrapping<T> {
+impl<T: WrappingMul + Mul<Output = T> + Clone> Mul<&Wrapping<T>> for &Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn mul(self, rhs: &Wrapping<T>) -> Self::Output {
-        Wrapping(self.0.wrapping_mul(&rhs.0))
+        Wrapping(self.0.clone().wrapping_mul(rhs.0.clone()))
     }
 }
 
-impl<T: WrappingNeg> Neg for Wrapping<T> {
+impl<T: WrappingNeg<Output = T> + Neg<Output = T> + Clone> Neg for Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn neg(self) -> Self::Output {
-        Wrapping(self.0.wrapping_neg())
+        Wrapping(self.0.clone().wrapping_neg())
     }
 }
 
-impl<T: WrappingNeg> Neg for &Wrapping<T> {
+impl<T: WrappingNeg<Output = T> + Neg<Output = T> + Clone> Neg for &Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn neg(self) -> Self::Output {
-        Wrapping(self.0.wrapping_neg())
+        Wrapping(self.0.clone().wrapping_neg())
     }
 }
 
-impl<T: WrappingShl> Shl<u32> for Wrapping<T> {
+impl<T: WrappingShl + Shl<usize, Output = T> + Clone> Shl<u32> for Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn shl(self, rhs: u32) -> Self::Output {
-        Wrapping(self.0.wrapping_shl(rhs))
+        Wrapping(self.0.clone().wrapping_shl(rhs))
     }
 }
 
-impl<T: WrappingShl> Shl<u32> for &Wrapping<T> {
+impl<T: WrappingShl + Shl<usize, Output = T> + Clone> Shl<u32> for &Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn shl(self, rhs: u32) -> Self::Output {
-        Wrapping(self.0.wrapping_shl(rhs))
+        Wrapping(self.0.clone().wrapping_shl(rhs))
     }
 }
 
-impl<T: WrappingShr> Shr<u32> for Wrapping<T> {
+impl<T: WrappingShr + Shr<usize, Output = T> + Clone> Shr<u32> for Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn shr(self, rhs: u32) -> Self::Output {
-        Wrapping(self.0.wrapping_shr(rhs))
+        Wrapping(self.0.clone().wrapping_shr(rhs))
     }
 }
 
-impl<T: WrappingShr> Shr<u32> for &Wrapping<T> {
+impl<T: WrappingShr + Shr<usize, Output = T> + Clone> Shr<u32> for &Wrapping<T> {
     type Output = Wrapping<T>;
 
     #[inline]
     fn shr(self, rhs: u32) -> Self::Output {
-        Wrapping(self.0.wrapping_shr(rhs))
+        Wrapping(self.0.clone().wrapping_shr(rhs))
     }
 }
 
@@ -203,10 +203,15 @@ impl<T: Zero> Zero for Wrapping<T> {
     }
 }
 
-impl<T: num_traits::Zero + WrappingAdd> num_traits::Zero for Wrapping<T> {
+impl<T: num_traits::Zero + WrappingAdd + Add<Output = T> + Clone> num_traits::Zero for Wrapping<T> {
     #[inline]
     fn zero() -> Self {
         Wrapping(T::zero())
+    }
+
+    #[inline]
+    fn set_zero(&mut self) {
+        self.0.set_zero();
     }
 
     #[inline]
@@ -215,10 +220,15 @@ impl<T: num_traits::Zero + WrappingAdd> num_traits::Zero for Wrapping<T> {
     }
 }
 
-impl<T: num_traits::One + WrappingMul + PartialEq> num_traits::One for Wrapping<T> {
+impl<T: num_traits::One + WrappingMul + Mul<Output = T> + PartialEq + Clone> num_traits::One for Wrapping<T> {
     #[inline]
     fn one() -> Self {
         Wrapping(T::one())
+    }
+
+    #[inline]
+    fn set_one(&mut self) {
+        self.0.set_one();
     }
 
     #[inline]

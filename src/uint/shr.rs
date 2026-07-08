@@ -192,8 +192,8 @@ macro_rules! impl_shr {
 impl_shr!(i32, u32, usize);
 
 impl<const LIMBS: usize> WrappingShr for Uint<LIMBS> {
-    fn wrapping_shr(&self, shift: u32) -> Uint<LIMBS> {
-        self.wrapping_shr(shift)
+    fn wrapping_shr(self, shift: u32) -> Uint<LIMBS> {
+        Uint::wrapping_shr(&self, shift)
     }
 }
 

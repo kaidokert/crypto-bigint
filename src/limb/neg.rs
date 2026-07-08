@@ -12,8 +12,9 @@ impl Limb {
 }
 
 impl WrappingNeg for Limb {
+    type Output = Self;
     #[inline]
-    fn wrapping_neg(&self) -> Self {
+    fn wrapping_neg(self) -> Self {
         Self(self.0.wrapping_neg())
     }
 }

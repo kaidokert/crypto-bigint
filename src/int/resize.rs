@@ -35,7 +35,7 @@ mod tests {
     fn scale_up() {
         assert_eq!(
             I128::MIN.resize::<{ I256::LIMBS }>(),
-            I256::ZERO.wrapping_sub(&I256 {
+            I256::ZERO.wrapping_sub(I256 {
                 0: I128::MIN.0.resize()
             })
         );

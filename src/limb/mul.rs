@@ -110,8 +110,8 @@ impl MulAssign<&Checked<Limb>> for Checked<Limb> {
 
 impl WrappingMul for Limb {
     #[inline]
-    fn wrapping_mul(&self, v: &Self) -> Self {
-        self.wrapping_mul(*v)
+    fn wrapping_mul(self, v: Self) -> Self {
+        (&self).wrapping_mul(v)
     }
 }
 

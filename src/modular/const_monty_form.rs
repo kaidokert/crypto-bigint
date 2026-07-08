@@ -196,6 +196,10 @@ impl<MOD: ConstMontyParams<LIMBS>, const LIMBS: usize> num_traits::Zero
         Self::ZERO
     }
 
+    fn set_zero(&mut self) {
+        *self = Self::ZERO;
+    }
+
     fn is_zero(&self) -> bool {
         self.ct_eq(&Self::ZERO).into()
     }
