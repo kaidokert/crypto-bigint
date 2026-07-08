@@ -291,8 +291,8 @@ where
 }
 
 impl<const LIMBS: usize> WrappingMul for Uint<LIMBS> {
-    fn wrapping_mul(&self, v: &Self) -> Self {
-        self.wrapping_mul(v)
+    fn wrapping_mul(self, v: Self) -> Self {
+        Uint::wrapping_mul(&self, &v)
     }
 }
 

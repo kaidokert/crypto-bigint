@@ -20,7 +20,8 @@ exclude = [".clippy.toml", ".codecov.yml", ".github", ".gitignore"]
 [dependencies]
 cpubits = "0.1"
 ctutils = "0.4"
-num-traits = { version = "0.2.19", default-features = false }
+num-traits = { package = "const-num-traits", version = "0.1.2", default-features = false }
+modmath-cios = { version = "0.1.0", optional = true }
 
 # optional dependencies
 der = { version = "0.8", optional = true, default-features = false }
@@ -54,6 +55,7 @@ getrandom = ["dep:getrandom", "rand_core"]
 rand_core = ["dep:rand_core"]
 serde = ["dep:serdect"]
 subtle = ["dep:subtle", "ctutils/subtle", "hybrid-array?/subtle"]
+cios = ["dep:modmath-cios"]
 
 [lints.rust]
 missing_copy_implementations = "warn"

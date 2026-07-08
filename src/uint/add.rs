@@ -124,9 +124,18 @@ impl<const LIMBS: usize> CheckedAdd for Uint<LIMBS> {
     }
 }
 
+impl<const LIMBS: usize> Add<&Uint<LIMBS>> for &Uint<LIMBS> {
+    type Output = Uint<LIMBS>;
+
+    fn add(self, rhs: &Uint<LIMBS>) -> Uint<LIMBS> {
+        self.checked_add(rhs)
+            .expect("attempted to add with overflow")
+    }
+}
+
 impl<const LIMBS: usize> WrappingAdd for Uint<LIMBS> {
-    fn wrapping_add(&self, v: &Self) -> Self {
-        self.wrapping_add(v)
+    fn wrapping_add(self, v: Self) -> Self {
+        Uint::wrapping_add(&self, &v)
     }
 }
 

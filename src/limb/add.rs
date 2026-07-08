@@ -115,8 +115,8 @@ impl CheckedAdd for Limb {
 
 impl WrappingAdd for Limb {
     #[inline]
-    fn wrapping_add(&self, v: &Self) -> Self {
-        self.wrapping_add(*v)
+    fn wrapping_add(self, v: Self) -> Self {
+        (&self).wrapping_add(v)
     }
 }
 

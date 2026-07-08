@@ -75,6 +75,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
 
 [[package]]
+name = "c0nst"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "019024ed810d5466b603e9369a8f887ae1f0b87bb6b16d46995c062e34a5cfde"
+dependencies = [
+ "proc-macro2",
+]
+
+[[package]]
 name = "cast"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -154,6 +163,15 @@ name = "cmov"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f88a43d011fc4a6876cb7344703e297c71dda42494fee094d5f7c76bf13f746"
+
+[[package]]
+name = "const-num-traits"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffb81ff665ba8a7794e84d8d040e75e68bb7f1be3a072ebf9ef482f05abaae49"
+dependencies = [
+ "c0nst",
+]
 
 [[package]]
 name = "cpubits"
@@ -239,6 +257,7 @@ name = "crypto-bigint"
 version = "0.7.5"
 dependencies = [
  "chacha20",
+ "const-num-traits",
  "cpubits",
  "criterion",
  "ctutils",
@@ -246,10 +265,10 @@ dependencies = [
  "getrandom 0.4.2",
  "hex-literal",
  "hybrid-array",
+ "modmath-cios",
  "num-bigint",
  "num-integer",
  "num-modular",
- "num-traits",
  "proptest",
  "rand_core 0.10.1",
  "rlp",
@@ -460,6 +479,12 @@ name = "memchr"
 version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8ca58f447f06ed17d5fc4043ce1b10dd205e060fb3ce5b979b8ed8e59ff3f79"
+
+[[package]]
+name = "modmath-cios"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "346927b19e50dcc4f459e2295c4d97be8357a8ab134fc62fdf867ae18a92aa61"
 
 [[package]]
 name = "num-bigint"

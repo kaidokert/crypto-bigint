@@ -313,6 +313,10 @@ impl<const LIMBS: usize> num_traits::Zero for Int<LIMBS> {
     fn is_zero(&self) -> bool {
         self.0.ct_eq(&Self::ZERO.0).into()
     }
+
+    fn set_zero(&mut self) {
+        *self = Self::ZERO;
+    }
 }
 
 impl<const LIMBS: usize> num_traits::One for Int<LIMBS> {
@@ -323,6 +327,10 @@ impl<const LIMBS: usize> num_traits::One for Int<LIMBS> {
 
     fn is_one(&self) -> bool {
         self.0.ct_eq(&Self::ONE.0).into()
+    }
+
+    fn set_one(&mut self) {
+        *self = Self::ONE;
     }
 }
 

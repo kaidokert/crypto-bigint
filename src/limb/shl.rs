@@ -122,8 +122,8 @@ impl ShlVartime for Limb {
 
 impl WrappingShl for Limb {
     #[inline]
-    fn wrapping_shl(&self, shift: u32) -> Limb {
-        (*self).wrapping_shl(shift)
+    fn wrapping_shl(self, shift: u32) -> Limb {
+        self.wrapping_shl(shift)
     }
 }
 

@@ -44,9 +44,11 @@ impl<const LIMBS: usize> Int<LIMBS> {
 }
 
 impl<const LIMBS: usize> WrappingNeg for Int<LIMBS> {
+    type Output = Self;
+
     #[inline]
-    fn wrapping_neg(&self) -> Self {
-        self.wrapping_neg()
+    fn wrapping_neg(self) -> Self::Output {
+        self.overflowing_neg().0
     }
 }
 

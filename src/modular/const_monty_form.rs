@@ -179,6 +179,10 @@ impl<MOD: ConstMontyParams<LIMBS>, const LIMBS: usize> num_traits::Zero
     fn is_zero(&self) -> bool {
         self.ct_eq(&Self::ZERO).into()
     }
+
+    fn set_zero(&mut self) {
+        *self = Self::ZERO;
+    }
 }
 
 impl<MOD: ConstMontyParams<LIMBS>, const LIMBS: usize> ConstOne for ConstMontyForm<MOD, LIMBS> {
@@ -201,6 +205,10 @@ impl<MOD: ConstMontyParams<LIMBS>, const LIMBS: usize> num_traits::One
 
     fn is_one(&self) -> bool {
         self.ct_eq(&Self::ONE).into()
+    }
+
+    fn set_one(&mut self) {
+        *self = Self::ONE;
     }
 }
 

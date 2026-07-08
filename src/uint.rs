@@ -65,6 +65,8 @@ mod array;
 pub(crate) mod boxed;
 #[cfg(feature = "extra-sizes")]
 mod extra_sizes;
+#[cfg(feature = "cios")]
+mod cios;
 #[cfg(feature = "rand_core")]
 mod rand;
 
@@ -439,6 +441,10 @@ impl<const LIMBS: usize> num_traits::Zero for Uint<LIMBS> {
     fn is_zero(&self) -> bool {
         self.ct_eq(&Self::ZERO).into()
     }
+
+    fn set_zero(&mut self) {
+        *self = Self::ZERO;
+    }
 }
 
 impl<const LIMBS: usize> num_traits::One for Uint<LIMBS> {
@@ -449,6 +455,10 @@ impl<const LIMBS: usize> num_traits::One for Uint<LIMBS> {
 
     fn is_one(&self) -> bool {
         self.ct_eq(&Self::ONE).into()
+    }
+
+    fn set_one(&mut self) {
+        *self = Self::ONE;
     }
 }
 
@@ -513,6 +523,343 @@ where
 
 #[cfg(feature = "zeroize")]
 impl<const LIMBS: usize> DefaultIsZeroes for Uint<LIMBS> {}
+
+impl<const LIMBS: usize> num_traits::Bounded for Uint<LIMBS> {
+    fn min_value() -> Self { Self::ZERO }
+    fn max_value() -> Self { Self::MAX }
+}
+
+impl<const LIMBS: usize> num_traits::CheckedAdd for Uint<LIMBS> {
+    fn checked_add(self, rhs: Self) -> Option<Self> {
+        let (result, carry) = self.carrying_add(&rhs, Limb::ZERO);
+        if carry.eq_vartime(Limb::ZERO) { Some(result) } else { None }
+    }
+}
+
+impl<const LIMBS: usize> num_traits::CheckedSub for Uint<LIMBS> {
+    fn checked_sub(self, rhs: Self) -> Option<Self> {
+        let (result, borrow) = self.sbb(&rhs, Limb::ZERO);
+        if borrow.eq_vartime(Limb::ZERO) { Some(result) } else { None }
+    }
+}
+
+impl<const LIMBS: usize> num_traits::Saturating for Uint<LIMBS> {
+    fn saturating_add(self, rhs: Self) -> Self {
+        Uint::saturating_add(&self, &rhs)
+    }
+
+    fn saturating_sub(self, rhs: Self) -> Self {
+        Uint::saturating_sub(&self, &rhs)
+    }
+}
+
+impl<const LIMBS: usize> num_traits::CheckedMul for Uint<LIMBS> {
+    fn checked_mul(self, rhs: Self) -> Option<Self> {
+        let (lo, hi) = self.widening_mul::<LIMBS>(&rhs);
+        if hi.is_zero_vartime() { Some(lo) } else { None }
+    }
+}
+
+impl<const LIMBS: usize> num_traits::CheckedDiv for Uint<LIMBS> {
+    fn checked_div(self, rhs: Self) -> Option<Self> {
+        NonZero::new(rhs).map(|nz| self.wrapping_div(&nz)).into()
+    }
+}
+
+impl<const LIMBS: usize> num_traits::ToPrimitive for Uint<LIMBS> {
+    fn to_i64(&self) -> Option<i64> {
+        let u = self.to_u64()?;
+        if u <= i64::MAX as u64 { Some(u as i64) } else { None }
+    }
+
+    fn to_u64(&self) -> Option<u64> {
+        if *self > Self::from_u64(u64::MAX) { return None; }
+        Some(self.as_words()[0])
+    }
+}
+
+impl<const LIMBS: usize> num_traits::NumCast for Uint<LIMBS> {
+    fn from<T: num_traits::ToPrimitive>(n: T) -> Option<Self> {
+        n.to_u64().map(Self::from_u64)
+    }
+}
+
+// const-num-traits splits bit methods out of `PrimInt` into `PrimBits`.
+impl<const LIMBS: usize> num_traits::OverflowingAdd for Uint<LIMBS> {
+    fn overflowing_add(self, rhs: Self) -> (Self, bool) {
+        let (result, carry) = self.carrying_add(&rhs, Limb::ZERO);
+        (result, bool::from(carry.is_nonzero()))
+    }
+}
+
+impl<const LIMBS: usize> num_traits::OverflowingSub for Uint<LIMBS> {
+    fn overflowing_sub(self, rhs: Self) -> (Self, bool) {
+        let (result, borrow) = self.sbb(&rhs, Limb::ZERO);
+        (result, bool::from(borrow.is_nonzero()))
+    }
+}
+
+impl<const LIMBS: usize> num_traits::OverflowingMul for Uint<LIMBS> {
+    fn overflowing_mul(self, rhs: Self) -> (Self, bool) {
+        let (lo, hi) = self.widening_mul::<LIMBS>(&rhs);
+        (lo, !hi.is_zero_vartime())
+    }
+}
+
+impl<const LIMBS: usize> num_traits::PrimBits for Uint<LIMBS> {
+    fn count_ones(self) -> u32 {
+        let mut n = 0u32;
+        let mut i = 0;
+        while i < LIMBS { n += self.limbs[i].0.count_ones(); i += 1; }
+        n
+    }
+
+    fn count_zeros(self) -> u32 {
+        let mut n = 0u32;
+        let mut i = 0;
+        while i < LIMBS { n += self.limbs[i].0.count_zeros(); i += 1; }
+        n
+    }
+
+    fn leading_zeros(self) -> u32 {
+        let mut n = 0u32;
+        let mut i = LIMBS;
+        while i > 0 {
+            i -= 1;
+            let lz = self.limbs[i].0.leading_zeros();
+            n += lz;
+            if lz < Limb::BITS { break; }
+        }
+        n
+    }
+
+    fn trailing_zeros(self) -> u32 {
+        let mut n = 0u32;
+        let mut i = 0;
+        while i < LIMBS {
+            let tz = self.limbs[i].0.trailing_zeros();
+            n += tz;
+            if tz < Limb::BITS { break; }
+            i += 1;
+        }
+        n
+    }
+
+    fn rotate_left(self, _n: u32) -> Self { todo!() }
+    fn rotate_right(self, _n: u32) -> Self { todo!() }
+    fn signed_shl(self, _n: u32) -> Self { todo!() }
+    fn signed_shr(self, _n: u32) -> Self { todo!() }
+    fn unsigned_shl(self, n: u32) -> Self { self.wrapping_shl(n) }
+    fn unsigned_shr(self, n: u32) -> Self { self.wrapping_shr(n) }
+    fn swap_bytes(self) -> Self { todo!() }
+    fn from_be(x: Self) -> Self { todo!() }
+    fn from_le(x: Self) -> Self { todo!() }
+    fn to_be(self) -> Self { todo!() }
+    fn to_le(self) -> Self { todo!() }
+}
+
+impl<const LIMBS: usize> num_traits::PrimInt for Uint<LIMBS> {
+    fn pow(self, mut exp: u32) -> Self {
+        let mut base = self;
+        let mut result = Self::ONE;
+        while exp > 0 {
+            if exp & 1 == 1 { result = Uint::wrapping_mul(&result, &base); }
+            base = Uint::wrapping_mul(&base, &base);
+            exp >>= 1;
+        }
+        result
+    }
+}
+
+// Fixed-size byte buffer: stores [Limb; LIMBS], exposes LIMBS*Limb::BYTES via
+// unsafe ptr cast. Default via [Limb::ZERO; LIMBS] works for any LIMBS.
+// Unifies ToBytes::Bytes == FromBytes::Bytes for FixedWidthUnsignedInt compat.
+#[derive(Clone, Copy)]
+pub struct BytesHolder<const LIMBS: usize> {
+    limbs: [Limb; LIMBS],
+}
+
+impl<const LIMBS: usize> Default for BytesHolder<LIMBS> {
+    fn default() -> Self {
+        Self { limbs: [Limb::ZERO; LIMBS] }
+    }
+}
+
+impl<const LIMBS: usize> BytesHolder<LIMBS> {
+    #[allow(unsafe_code)]
+    #[inline]
+    fn as_byte_slice(&self) -> &[u8] {
+        // SAFETY: Limb is repr(transparent) over Word; array is valid for
+        // reads of LIMBS * Limb::BYTES bytes from its base address.
+        unsafe {
+            core::slice::from_raw_parts(
+                self.limbs.as_ptr() as *const u8,
+                LIMBS * Limb::BYTES,
+            )
+        }
+    }
+
+    #[allow(unsafe_code)]
+    #[inline]
+    fn as_byte_slice_mut(&mut self) -> &mut [u8] {
+        // SAFETY: unique &mut access; same size guarantee as as_byte_slice.
+        unsafe {
+            core::slice::from_raw_parts_mut(
+                self.limbs.as_mut_ptr() as *mut u8,
+                LIMBS * Limb::BYTES,
+            )
+        }
+    }
+}
+
+impl<const LIMBS: usize> AsRef<[u8]> for BytesHolder<LIMBS> {
+    fn as_ref(&self) -> &[u8] { self.as_byte_slice() }
+}
+impl<const LIMBS: usize> AsMut<[u8]> for BytesHolder<LIMBS> {
+    fn as_mut(&mut self) -> &mut [u8] { self.as_byte_slice_mut() }
+}
+impl<const LIMBS: usize> core::borrow::Borrow<[u8]> for BytesHolder<LIMBS> {
+    fn borrow(&self) -> &[u8] { self.as_byte_slice() }
+}
+impl<const LIMBS: usize> core::borrow::BorrowMut<[u8]> for BytesHolder<LIMBS> {
+    fn borrow_mut(&mut self) -> &mut [u8] { self.as_byte_slice_mut() }
+}
+impl<const LIMBS: usize> PartialEq for BytesHolder<LIMBS> {
+    fn eq(&self, other: &Self) -> bool { self.as_byte_slice() == other.as_byte_slice() }
+}
+impl<const LIMBS: usize> Eq for BytesHolder<LIMBS> {}
+impl<const LIMBS: usize> PartialOrd for BytesHolder<LIMBS> {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> { Some(self.cmp(other)) }
+}
+impl<const LIMBS: usize> Ord for BytesHolder<LIMBS> {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering { self.as_byte_slice().cmp(other.as_byte_slice()) }
+}
+impl<const LIMBS: usize> core::hash::Hash for BytesHolder<LIMBS> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) { self.as_byte_slice().hash(state) }
+}
+impl<const LIMBS: usize> fmt::Debug for BytesHolder<LIMBS> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "BytesHolder(")?;
+        for b in self.as_byte_slice() { write!(f, "{:02x}", b)?; }
+        write!(f, ")")
+    }
+}
+#[cfg(feature = "zeroize")]
+impl<const LIMBS: usize> zeroize::DefaultIsZeroes for BytesHolder<LIMBS> {}
+
+impl<const LIMBS: usize> num_traits::ToBytes for Uint<LIMBS> {
+    type Bytes = BytesHolder<LIMBS>;
+
+    fn to_be_bytes(self) -> BytesHolder<LIMBS> {
+        let mut holder = BytesHolder::default();
+        let bytes = holder.as_byte_slice_mut();
+        let limb_bytes = Limb::BYTES;
+        let mut i = 0;
+        while i < LIMBS {
+            let word_be = self.limbs[LIMBS - 1 - i].0.to_be_bytes();
+            let mut j = 0;
+            while j < limb_bytes { bytes[i * limb_bytes + j] = word_be[j]; j += 1; }
+            i += 1;
+        }
+        holder
+    }
+
+    fn to_le_bytes(self) -> BytesHolder<LIMBS> {
+        let mut holder = BytesHolder::default();
+        let bytes = holder.as_byte_slice_mut();
+        let limb_bytes = Limb::BYTES;
+        let mut i = 0;
+        while i < LIMBS {
+            let word_le = self.limbs[i].0.to_le_bytes();
+            let mut j = 0;
+            while j < limb_bytes { bytes[i * limb_bytes + j] = word_le[j]; j += 1; }
+            i += 1;
+        }
+        holder
+    }
+}
+
+impl<const LIMBS: usize> num_traits::FromBytes for Uint<LIMBS> {
+    type Bytes = BytesHolder<LIMBS>;
+
+    fn from_be_bytes(bytes: &BytesHolder<LIMBS>) -> Self {
+        let bytes = bytes.as_byte_slice();
+        let mut limbs = [Limb::ZERO; LIMBS];
+        let limb_bytes = Limb::BYTES;
+        let mut i = 0;
+        while i < LIMBS {
+            let start = i * limb_bytes;
+            let mut word: Word = 0;
+            let mut j = 0;
+            while j < limb_bytes { word = (word << 8) | (bytes[start + j] as Word); j += 1; }
+            limbs[LIMBS - 1 - i] = Limb(word);
+            i += 1;
+        }
+        Uint::new(limbs)
+    }
+
+    fn from_le_bytes(bytes: &BytesHolder<LIMBS>) -> Self {
+        let bytes = bytes.as_byte_slice();
+        let mut limbs = [Limb::ZERO; LIMBS];
+        let limb_bytes = Limb::BYTES;
+        let mut i = 0;
+        while i < LIMBS {
+            let start = i * limb_bytes;
+            let mut word: Word = 0;
+            let mut j = 0;
+            while j < limb_bytes { word |= (bytes[start + j] as Word) << (j * 8); j += 1; }
+            limbs[i] = Limb(word);
+            i += 1;
+        }
+        Uint::new(limbs)
+    }
+}
+
+// For the signing path: `for<'a> &'a T: ToBytes<Bytes = <T as ToBytes>::Bytes>`
+impl<const LIMBS: usize> num_traits::ToBytes for &Uint<LIMBS> {
+    type Bytes = BytesHolder<LIMBS>;
+    fn to_be_bytes(self) -> BytesHolder<LIMBS> { (*self).to_be_bytes() }
+    fn to_le_bytes(self) -> BytesHolder<LIMBS> { (*self).to_le_bytes() }
+}
+
+impl<const LIMBS: usize> num_traits::ops::parity::Parity for Uint<LIMBS> {
+    fn is_odd(self) -> bool {
+        if LIMBS == 0 { return false; }
+        self.limbs[0].0 & 1 == 1
+    }
+    fn is_even(self) -> bool { !self.is_odd() }
+}
+
+impl<const LIMBS: usize> num_traits::ops::carrying::BorrowingSub for Uint<LIMBS> {
+    fn borrowing_sub(self, rhs: Self, borrow: bool) -> (Self, bool) {
+        let (res, b) = self.sbb(&rhs, Limb(borrow as Word));
+        (res, b.0 != 0)
+    }
+}
+
+impl<const LIMBS: usize> num_traits::ops::carrying::CarryingMul for Uint<LIMBS> {
+    type Unsigned = Self;
+
+    fn carrying_mul(self, rhs: Self, carry: Self) -> (Self, Self) {
+        let (lo, hi) = self.split_mul(&rhs);
+        let (lo, c) = lo.adc(&carry, Limb::ZERO);
+        let (hi, _) = hi.adc(&Uint::ZERO, c);
+        (lo, hi)
+    }
+
+    fn carrying_mul_add(self, rhs: Self, carry: Self, add: Self) -> (Self, Self) {
+        let (lo, hi) = self.split_mul(&rhs);
+        let (lo, c1) = lo.adc(&carry, Limb::ZERO);
+        let (lo, c2) = lo.adc(&add, Limb::ZERO);
+        let carry_total = Limb(c1.0.wrapping_add(c2.0));
+        let (hi, _) = hi.adc(&Uint::ZERO, carry_total);
+        (lo, hi)
+    }
+}
+
+impl<const LIMBS: usize> num_traits::personality::HasPersonality for Uint<LIMBS> {
+    type P = num_traits::Nct;
+}
 
 // TODO(tarcieri): use `generic_const_exprs` when stable to make generic around bits.
 impl_uint_aliases! {

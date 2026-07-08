@@ -81,7 +81,7 @@ impl<const LIMBS: usize> Int<LIMBS> {
     #[inline(always)]
     #[must_use]
     pub const fn wrapping_shl(&self, shift: u32) -> Self {
-        Self(self.0.wrapping_shl(shift))
+        Self(Uint::wrapping_shl(&self.0, shift))
     }
 
     /// Computes `self << shift` in variable-time in a panic-free manner, reducing shift modulo
@@ -130,8 +130,8 @@ macro_rules! impl_shl {
 impl_shl!(i32, u32, usize);
 
 impl<const LIMBS: usize> WrappingShl for Int<LIMBS> {
-    fn wrapping_shl(&self, shift: u32) -> Int<LIMBS> {
-        self.wrapping_shl(shift)
+    fn wrapping_shl(self, shift: u32) -> Int<LIMBS> {
+        Int::wrapping_shl(&self, shift)
     }
 }
 
