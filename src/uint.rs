@@ -592,6 +592,134 @@ where
 #[cfg(feature = "zeroize")]
 impl<const LIMBS: usize> DefaultIsZeroes for Uint<LIMBS> {}
 
+// ---- const-num-traits extended impls ----------------------------------------
+
+impl<const LIMBS: usize> num_traits::ops::parity::Parity for Uint<LIMBS> {
+    fn is_odd(self) -> bool {
+        if LIMBS == 0 {
+            return false;
+        }
+        self.limbs[0].0 & 1 == 1
+    }
+    fn is_even(self) -> bool {
+        !self.is_odd()
+    }
+}
+
+impl<const LIMBS: usize> num_traits::ops::carrying::BorrowingSub for Uint<LIMBS> {
+    fn borrowing_sub(self, rhs: Self, borrow: bool) -> (Self, bool) {
+        let (res, b) = self.sbb(&rhs, Limb(borrow as Word));
+        (res, b.0 != 0)
+    }
+}
+
+impl<const LIMBS: usize> num_traits::ops::carrying::CarryingMul for Uint<LIMBS> {
+    type Unsigned = Self;
+
+    fn carrying_mul(self, rhs: Self, carry: Self) -> (Self, Self) {
+        let (lo, hi) = self.split_mul(&rhs);
+        let (lo, c) = lo.adc(&carry, Limb::ZERO);
+        let (hi, _) = hi.adc(&Uint::ZERO, c);
+        (lo, hi)
+    }
+
+    fn carrying_mul_add(self, rhs: Self, carry: Self, add: Self) -> (Self, Self) {
+        let (lo, hi) = self.split_mul(&rhs);
+        let (lo, c1) = lo.adc(&carry, Limb::ZERO);
+        let (lo, c2) = lo.adc(&add, Limb::ZERO);
+        let carry_total = Limb(c1.0.wrapping_add(c2.0));
+        let (hi, _) = hi.adc(&Uint::ZERO, carry_total);
+        (lo, hi)
+    }
+}
+
+impl<const LIMBS: usize> num_traits::personality::HasPersonality for Uint<LIMBS> {
+    type P = num_traits::Nct;
+}
+
+impl<const LIMBS: usize> num_traits::ops::byte_slice::FromByteSlice for Uint<LIMBS> {
+    fn from_be_slice(
+        bytes: &[u8],
+    ) -> Result<Self, num_traits::ops::byte_slice::ByteSliceError> {
+        use num_traits::ops::byte_slice::{ByteSliceError, ByteSliceErrorKind};
+        if bytes.is_empty() {
+            return Err(ByteSliceError { kind: ByteSliceErrorKind::Empty });
+        }
+        let width = LIMBS * Limb::BYTES;
+        if bytes.len() > width {
+            return Err(ByteSliceError { kind: ByteSliceErrorKind::Overflow });
+        }
+        let mut buf = [0u8; 512]; // over-size scratch; trimmed by width
+        let pad = width - bytes.len();
+        let mut i = 0;
+        while i < bytes.len() {
+            buf[pad + i] = bytes[i];
+            i += 1;
+        }
+        let mut limbs = [Limb::ZERO; LIMBS];
+        let mut j = 0;
+        while j < LIMBS {
+            let start = j * Limb::BYTES;
+            let mut word: Word = 0;
+            let mut k = 0;
+            while k < Limb::BYTES {
+                word = (word << 8) | (buf[start + k] as Word);
+                k += 1;
+            }
+            limbs[LIMBS - 1 - j] = Limb(word);
+            j += 1;
+        }
+        Ok(Uint::new(limbs))
+    }
+
+    fn from_le_slice(
+        bytes: &[u8],
+    ) -> Result<Self, num_traits::ops::byte_slice::ByteSliceError> {
+        use num_traits::ops::byte_slice::{ByteSliceError, ByteSliceErrorKind};
+        if bytes.is_empty() {
+            return Err(ByteSliceError { kind: ByteSliceErrorKind::Empty });
+        }
+        let width = LIMBS * Limb::BYTES;
+        if bytes.len() > width {
+            return Err(ByteSliceError { kind: ByteSliceErrorKind::Overflow });
+        }
+        let mut buf = [0u8; 512];
+        let mut i = 0;
+        while i < bytes.len() {
+            buf[i] = bytes[i];
+            i += 1;
+        }
+        let mut limbs = [Limb::ZERO; LIMBS];
+        let mut j = 0;
+        while j < LIMBS {
+            let start = j * Limb::BYTES;
+            let mut word: Word = 0;
+            let mut k = 0;
+            while k < Limb::BYTES {
+                word |= (buf[start + k] as Word) << (k * 8);
+                k += 1;
+            }
+            limbs[j] = Limb(word);
+            j += 1;
+        }
+        Ok(Uint::new(limbs))
+    }
+}
+
+// For the signing path: `for<'a> &'a T: ToBytes<Bytes = <T as ToBytes>::Bytes>`
+#[cfg(feature = "alloc")]
+impl<const LIMBS: usize> num_traits::ToBytes for &Uint<LIMBS> {
+    type Bytes = alloc::vec::Vec<u8>;
+
+    fn to_be_bytes(self) -> alloc::vec::Vec<u8> {
+        (*self).to_be_bytes()
+    }
+
+    fn to_le_bytes(self) -> alloc::vec::Vec<u8> {
+        (*self).to_le_bytes()
+    }
+}
+
 // TODO(tarcieri): use `generic_const_exprs` when stable to make generic around bits.
 impl_uint_aliases! {
     (U64, 64, "64-bit"),

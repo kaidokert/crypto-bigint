@@ -338,6 +338,12 @@ impl num_traits::Zero for BoxedUint {
     fn is_zero(&self) -> bool {
         self.is_zero().into()
     }
+
+    fn set_zero(&mut self) {
+        for limb in self.limbs.iter_mut() {
+            *limb = Limb::ZERO;
+        }
+    }
 }
 
 impl num_traits::One for BoxedUint {
@@ -347,6 +353,10 @@ impl num_traits::One for BoxedUint {
 
     fn is_one(&self) -> bool {
         self.is_one().into()
+    }
+
+    fn set_one(&mut self) {
+        *self = Self::one();
     }
 }
 

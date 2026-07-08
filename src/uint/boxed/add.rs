@@ -166,8 +166,8 @@ impl CheckedAdd for BoxedUint {
 }
 
 impl WrappingAdd for BoxedUint {
-    fn wrapping_add(&self, v: &Self) -> Self {
-        self.wrapping_add(v)
+    fn wrapping_add(self, v: Self) -> Self {
+        BoxedUint::wrapping_add(&self, &v)
     }
 }
 

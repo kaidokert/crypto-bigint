@@ -166,8 +166,8 @@ impl SubAssign<&Wrapping<BoxedUint>> for Wrapping<BoxedUint> {
 }
 
 impl WrappingSub for BoxedUint {
-    fn wrapping_sub(&self, v: &Self) -> Self {
-        self.wrapping_sub(v)
+    fn wrapping_sub(self, v: Self) -> Self {
+        BoxedUint::wrapping_sub(&self, &v)
     }
 }
 

@@ -51,6 +51,15 @@ impl<const LIMBS: usize> Add<&Uint<LIMBS>> for Uint<LIMBS> {
     }
 }
 
+impl<const LIMBS: usize> Add<&Uint<LIMBS>> for &Uint<LIMBS> {
+    type Output = Uint<LIMBS>;
+
+    fn add(self, rhs: &Uint<LIMBS>) -> Uint<LIMBS> {
+        self.checked_add(rhs)
+            .expect("attempted to add with overflow")
+    }
+}
+
 impl<const LIMBS: usize> AddAssign for Uint<LIMBS> {
     fn add_assign(&mut self, other: Self) {
         *self += &other;

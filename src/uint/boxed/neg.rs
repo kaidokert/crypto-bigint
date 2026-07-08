@@ -19,8 +19,9 @@ impl BoxedUint {
 }
 
 impl WrappingNeg for BoxedUint {
-    fn wrapping_neg(&self) -> Self {
-        self.wrapping_neg()
+    type Output = Self;
+    fn wrapping_neg(self) -> Self {
+        BoxedUint::wrapping_neg(&self)
     }
 }
 

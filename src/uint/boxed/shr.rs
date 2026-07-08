@@ -187,8 +187,8 @@ macro_rules! impl_shr {
 impl_shr!(i32, u32, usize);
 
 impl WrappingShr for BoxedUint {
-    fn wrapping_shr(&self, shift: u32) -> BoxedUint {
-        self.wrapping_shr(shift)
+    fn wrapping_shr(self, shift: u32) -> BoxedUint {
+        BoxedUint::wrapping_shr(&self, shift)
     }
 }
 

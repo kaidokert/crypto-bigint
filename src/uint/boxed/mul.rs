@@ -116,13 +116,13 @@ impl MulAssign<&BoxedUint> for BoxedUint {
 
 impl MulAssign<Wrapping<BoxedUint>> for Wrapping<BoxedUint> {
     fn mul_assign(&mut self, other: Wrapping<BoxedUint>) {
-        *self = Wrapping(self.0.wrapping_mul(&other.0));
+        *self = Wrapping(BoxedUint::wrapping_mul(&self.0, &other.0));
     }
 }
 
 impl MulAssign<&Wrapping<BoxedUint>> for Wrapping<BoxedUint> {
     fn mul_assign(&mut self, other: &Wrapping<BoxedUint>) {
-        *self = Wrapping(self.0.wrapping_mul(&other.0));
+        *self = Wrapping(BoxedUint::wrapping_mul(&self.0, &other.0));
     }
 }
 
@@ -145,8 +145,8 @@ impl WideningMul<&BoxedUint> for BoxedUint {
 }
 
 impl WrappingMul for BoxedUint {
-    fn wrapping_mul(&self, v: &Self) -> Self {
-        self.wrapping_mul(v)
+    fn wrapping_mul(self, v: Self) -> Self {
+        BoxedUint::wrapping_mul(&self, &v)
     }
 }
 
