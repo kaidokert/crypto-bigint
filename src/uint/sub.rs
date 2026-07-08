@@ -93,6 +93,22 @@ impl<const LIMBS: usize> Sub<&Uint<LIMBS>> for Uint<LIMBS> {
     }
 }
 
+impl<const LIMBS: usize> Sub<Uint<LIMBS>> for &Uint<LIMBS> {
+    type Output = Uint<LIMBS>;
+
+    fn sub(self, rhs: Uint<LIMBS>) -> Uint<LIMBS> {
+        (*self).sub(&rhs)
+    }
+}
+
+impl<const LIMBS: usize> Sub<&Uint<LIMBS>> for &Uint<LIMBS> {
+    type Output = Uint<LIMBS>;
+
+    fn sub(self, rhs: &Uint<LIMBS>) -> Uint<LIMBS> {
+        (*self).sub(rhs)
+    }
+}
+
 impl<const LIMBS: usize> SubAssign<Uint<LIMBS>> for Uint<LIMBS> {
     fn sub_assign(&mut self, rhs: Uint<LIMBS>) {
         *self = self.sub(&rhs);

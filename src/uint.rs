@@ -861,6 +861,55 @@ impl<const LIMBS: usize> num_traits::personality::HasPersonality for Uint<LIMBS>
     type P = num_traits::Nct;
 }
 
+impl<const LIMBS: usize> num_traits::ops::byte_slice::FromByteSlice for Uint<LIMBS> {
+    fn from_be_slice(bytes: &[u8]) -> Result<Self, num_traits::ops::byte_slice::ByteSliceError> {
+        use num_traits::ops::byte_slice::ByteSliceErrorKind;
+        if bytes.is_empty() {
+            return Err(num_traits::ops::byte_slice::ByteSliceError { kind: ByteSliceErrorKind::Empty });
+        }
+        let capacity = LIMBS * Limb::BYTES;
+        if bytes.len() > capacity {
+            return Err(num_traits::ops::byte_slice::ByteSliceError { kind: ByteSliceErrorKind::Overflow });
+        }
+        // Zero-extend: pad to the left with leading zeros.
+        let mut limbs = [Limb::ZERO; LIMBS];
+        // Iterate from the right (LSB limb) upward, consuming Limb::BYTES from the end of bytes.
+        let mut remaining = bytes;
+        let mut limb_idx = 0usize;
+        while limb_idx < LIMBS && !remaining.is_empty() {
+            let chunk_len = if remaining.len() >= Limb::BYTES { Limb::BYTES } else { remaining.len() };
+            let (head, tail) = remaining.split_at(remaining.len() - chunk_len);
+            limbs[limb_idx] = Limb::from_be_slice(tail);
+            remaining = head;
+            limb_idx += 1;
+        }
+        Ok(Uint::new(limbs))
+    }
+
+    fn from_le_slice(bytes: &[u8]) -> Result<Self, num_traits::ops::byte_slice::ByteSliceError> {
+        use num_traits::ops::byte_slice::ByteSliceErrorKind;
+        if bytes.is_empty() {
+            return Err(num_traits::ops::byte_slice::ByteSliceError { kind: ByteSliceErrorKind::Empty });
+        }
+        let capacity = LIMBS * Limb::BYTES;
+        if bytes.len() > capacity {
+            return Err(num_traits::ops::byte_slice::ByteSliceError { kind: ByteSliceErrorKind::Overflow });
+        }
+        // Zero-extend: pad to the right with trailing zeros.
+        let mut limbs = [Limb::ZERO; LIMBS];
+        let mut remaining = bytes;
+        let mut limb_idx = 0usize;
+        while limb_idx < LIMBS && !remaining.is_empty() {
+            let chunk_len = if remaining.len() >= Limb::BYTES { Limb::BYTES } else { remaining.len() };
+            let (chunk, tail) = remaining.split_at(chunk_len);
+            limbs[limb_idx] = Limb::from_le_slice(chunk);
+            remaining = tail;
+            limb_idx += 1;
+        }
+        Ok(Uint::new(limbs))
+    }
+}
+
 // TODO(tarcieri): use `generic_const_exprs` when stable to make generic around bits.
 impl_uint_aliases! {
     (U64, 64, "64-bit"),
