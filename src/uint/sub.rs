@@ -88,8 +88,7 @@ impl<const LIMBS: usize> Sub<&Uint<LIMBS>> for Uint<LIMBS> {
     type Output = Self;
 
     fn sub(self, rhs: &Self) -> Self {
-        self.checked_sub(rhs)
-            .expect("attempted to subtract with underflow")
+        Uint::wrapping_sub(&self, rhs)
     }
 }
 
