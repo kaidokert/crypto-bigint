@@ -574,7 +574,16 @@ impl<const LIMBS: usize> num_traits::ToPrimitive for Uint<LIMBS> {
 
     fn to_u64(&self) -> Option<u64> {
         if *self > Self::from_u64(u64::MAX) { return None; }
-        Some(self.as_words()[0])
+        let words = self.as_words();
+        // On 64-bit targets Word=u64, one limb holds a full u64.
+        // On 32-bit targets Word=u32, two limbs hold a u64.
+        if Limb::BYTES >= 8 {
+            Some(words[0] as u64)
+        } else {
+            let lo = words[0] as u64;
+            let hi = if LIMBS > 1 { words[1] as u64 } else { 0 };
+            Some(lo | (hi << (Limb::BYTES * 8)))
+        }
     }
 }
 
