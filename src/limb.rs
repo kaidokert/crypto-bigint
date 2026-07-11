@@ -236,6 +236,10 @@ impl num_traits::Zero for Limb {
     fn is_zero(&self) -> bool {
         self.ct_eq(&Self::ZERO).into()
     }
+
+    fn set_zero(&mut self) {
+        *self = Self::ZERO;
+    }
 }
 
 impl num_traits::One for Limb {
@@ -245,6 +249,10 @@ impl num_traits::One for Limb {
 
     fn is_one(&self) -> bool {
         self.ct_eq(&Self::ONE).into()
+    }
+
+    fn set_one(&mut self) {
+        *self = Self::ONE;
     }
 }
 

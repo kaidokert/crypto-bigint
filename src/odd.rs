@@ -307,6 +307,10 @@ where
     fn is_one(&self) -> bool {
         self.0.is_one().into()
     }
+
+    fn set_one(&mut self) {
+        *self = Self(T::one());
+    }
 }
 
 /// Any odd integer multiplied by another odd integer is definitionally odd.

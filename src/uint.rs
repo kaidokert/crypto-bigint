@@ -59,6 +59,9 @@ mod sqrt;
 mod sub;
 mod sub_mod;
 
+mod const_numtraits;
+mod cios;
+
 #[cfg(feature = "hybrid-array")]
 mod array;
 #[cfg(feature = "alloc")]
@@ -439,6 +442,10 @@ impl<const LIMBS: usize> num_traits::Zero for Uint<LIMBS> {
     fn is_zero(&self) -> bool {
         self.ct_eq(&Self::ZERO).into()
     }
+
+    fn set_zero(&mut self) {
+        *self = Self::ZERO;
+    }
 }
 
 impl<const LIMBS: usize> num_traits::One for Uint<LIMBS> {
@@ -449,6 +456,10 @@ impl<const LIMBS: usize> num_traits::One for Uint<LIMBS> {
 
     fn is_one(&self) -> bool {
         self.ct_eq(&Self::ONE).into()
+    }
+
+    fn set_one(&mut self) {
+        *self = Self::ONE;
     }
 }
 

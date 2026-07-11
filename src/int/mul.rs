@@ -101,10 +101,10 @@ impl<const LIMBS: usize> Int<LIMBS> {
     #[must_use]
     pub const fn wrapping_mul<const RHS_LIMBS: usize>(&self, rhs: &Int<RHS_LIMBS>) -> Self {
         if RHS_LIMBS >= LIMBS {
-            Self(self.0.wrapping_mul(&rhs.0))
+            Self(Uint::wrapping_mul(&self.0, &rhs.0))
         } else {
             let (abs_rhs, rhs_sgn) = rhs.abs_sign();
-            Self(self.0.wrapping_mul(&abs_rhs).wrapping_neg_if(rhs_sgn))
+            Self(Uint::wrapping_mul(&self.0, &abs_rhs).wrapping_neg_if(rhs_sgn))
         }
     }
 }
@@ -147,8 +147,8 @@ impl<const LIMBS: usize, const RHS_LIMBS: usize> CheckedMul<Int<RHS_LIMBS>> for 
 }
 
 impl<const LIMBS: usize> WrappingMul for Int<LIMBS> {
-    fn wrapping_mul(&self, v: &Self) -> Self {
-        self.wrapping_mul(v)
+    fn wrapping_mul(self, v: Self) -> Self {
+        (&self).wrapping_mul(&v)
     }
 }
 

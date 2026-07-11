@@ -125,8 +125,8 @@ impl<const LIMBS: usize> CheckedAdd for Uint<LIMBS> {
 }
 
 impl<const LIMBS: usize> WrappingAdd for Uint<LIMBS> {
-    fn wrapping_add(&self, v: &Self) -> Self {
-        self.wrapping_add(v)
+    fn wrapping_add(self, v: Self) -> Self {
+        Uint::wrapping_add(&self, &v)
     }
 }
 

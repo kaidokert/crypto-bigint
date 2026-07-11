@@ -21,6 +21,8 @@ exclude = [".clippy.toml", ".codecov.yml", ".github", ".gitignore"]
 cpubits = "0.1"
 ctutils = "0.4"
 num-traits = { version = "0.2.19", default-features = false }
+const-num-traits = { version = "0.2", default-features = false, features = ["ct"] }
+modmath-cios = { version = "0.1" }
 
 # optional dependencies
 der = { version = "0.8", optional = true, default-features = false }
@@ -45,7 +47,7 @@ criterion = { version = "0.7", features = ["html_reports"] }
 proptest = "1.11"
 
 [features]
-default = ["rand_core"]
+default = ["rand_core", "subtle"]
 alloc = ["serdect?/alloc"]
 
 der = ["dep:der", "hybrid-array"]

@@ -34,9 +34,10 @@ impl<const LIMBS: usize> Uint<LIMBS> {
 }
 
 impl<const LIMBS: usize> WrappingNeg for Uint<LIMBS> {
+    type Output = Self;
     #[inline]
-    fn wrapping_neg(&self) -> Self {
-        self.wrapping_neg()
+    fn wrapping_neg(self) -> Self::Output {
+        self.carrying_neg().0
     }
 }
 

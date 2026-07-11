@@ -188,6 +188,10 @@ where
     fn is_one(&self) -> bool {
         self.0.is_one().into()
     }
+
+    fn set_one(&mut self) {
+        *self = Self(T::one());
+    }
 }
 
 /// Any non-zero integer multiplied by another non-zero integer is definitionally non-zero.

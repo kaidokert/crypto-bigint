@@ -1,6 +1,6 @@
 //! [`Int`] addition operations.
 
-use crate::{Add, AddAssign, Checked, CheckedAdd, Choice, CtOption, Int, Wrapping, WrappingAdd};
+use crate::{Add, AddAssign, Checked, CheckedAdd, Choice, CtOption, Int, Uint, Wrapping, WrappingAdd};
 
 impl<const LIMBS: usize> Int<LIMBS> {
     /// Perform checked addition. Returns `none` when the addition overflowed.
@@ -15,7 +15,7 @@ impl<const LIMBS: usize> Int<LIMBS> {
     #[must_use]
     pub const fn overflowing_add(&self, rhs: &Self) -> (Self, Choice) {
         // Step 1. add operands
-        let res = Self(self.0.wrapping_add(&rhs.0));
+        let res = Self(Uint::wrapping_add(&self.0, &rhs.0));
 
         // Step 2. determine whether overflow happened.
         // Note:
@@ -36,7 +36,7 @@ impl<const LIMBS: usize> Int<LIMBS> {
     #[inline]
     #[must_use]
     pub const fn wrapping_add(&self, rhs: &Self) -> Self {
-        Self(self.0.wrapping_add(&rhs.0))
+        Self(Uint::wrapping_add(&self.0, &rhs.0))
     }
 }
 
@@ -100,8 +100,8 @@ impl<const LIMBS: usize> CheckedAdd for Int<LIMBS> {
 }
 
 impl<const LIMBS: usize> WrappingAdd for Int<LIMBS> {
-    fn wrapping_add(&self, v: &Self) -> Self {
-        self.wrapping_add(v)
+    fn wrapping_add(self, v: Self) -> Self {
+        Int::wrapping_add(&self, &v)
     }
 }
 

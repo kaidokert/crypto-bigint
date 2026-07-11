@@ -130,8 +130,8 @@ impl<const LIMBS: usize> SubAssign<&Checked<Uint<LIMBS>>> for Checked<Uint<LIMBS
 }
 
 impl<const LIMBS: usize> WrappingSub for Uint<LIMBS> {
-    fn wrapping_sub(&self, v: &Self) -> Self {
-        self.wrapping_sub(v)
+    fn wrapping_sub(self, v: Self) -> Self {
+        Uint::wrapping_sub(&self, &v)
     }
 }
 
