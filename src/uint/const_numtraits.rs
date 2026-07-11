@@ -77,7 +77,7 @@ impl<const LIMBS: usize> const_num_traits::ops::overflowing::OverflowingAdd for 
 impl<const LIMBS: usize> const_num_traits::BorrowingSub for Uint<LIMBS> {
     type Output = Self;
     fn borrowing_sub(self, rhs: Self, borrow: bool) -> (Self, bool) {
-        let (result, b) = Uint::borrowing_sub(&self, &rhs, Limb::from(borrow as u8));
+        let (result, b) = Uint::borrowing_sub(&self, &rhs, Limb::from(u8::from(borrow)));
         (result, b != Limb::ZERO)
     }
 }
@@ -235,7 +235,7 @@ impl<const LIMBS: usize> BytesHolder<LIMBS> {
         // SAFETY: Limb is repr(transparent) over Word; array is valid for
         // reads of LIMBS * Limb::BYTES bytes from its base address.
         unsafe {
-            core::slice::from_raw_parts(self.limbs.as_ptr() as *const u8, LIMBS * Limb::BYTES)
+            core::slice::from_raw_parts(self.limbs.as_ptr().cast::<u8>(), LIMBS * Limb::BYTES)
         }
     }
 
@@ -245,7 +245,7 @@ impl<const LIMBS: usize> BytesHolder<LIMBS> {
         // SAFETY: unique &mut access; same size guarantee as as_byte_slice.
         unsafe {
             core::slice::from_raw_parts_mut(
-                self.limbs.as_mut_ptr() as *mut u8,
+                self.limbs.as_mut_ptr().cast::<u8>(),
                 LIMBS * Limb::BYTES,
             )
         }
@@ -290,7 +290,7 @@ impl<const LIMBS: usize> Ord for BytesHolder<LIMBS> {
 }
 impl<const LIMBS: usize> core::hash::Hash for BytesHolder<LIMBS> {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-        self.as_byte_slice().hash(state)
+        self.as_byte_slice().hash(state);
     }
 }
 impl<const LIMBS: usize> core::fmt::Debug for BytesHolder<LIMBS> {
@@ -370,7 +370,7 @@ impl<const LIMBS: usize> const_num_traits::FromBytes for Uint<LIMBS> {
             let mut word: Word = 0;
             let mut j = 0;
             while j < limb_bytes {
-                word = (word << 8) | (bytes[start + j] as Word);
+                word = (word << 8) | Word::from(bytes[start + j]);
                 j += 1;
             }
             limbs[LIMBS - 1 - i] = Limb(word);
@@ -389,7 +389,7 @@ impl<const LIMBS: usize> const_num_traits::FromBytes for Uint<LIMBS> {
             let mut word: Word = 0;
             let mut j = 0;
             while j < limb_bytes {
-                word |= (bytes[start + j] as Word) << (j * 8);
+                word |= Word::from(bytes[start + j]) << (j * 8);
                 j += 1;
             }
             limbs[i] = Limb(word);

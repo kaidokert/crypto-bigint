@@ -22,12 +22,7 @@ impl<const LIMBS: usize> CiosRowOps for Uint<LIMBS> {
         self.limbs[i].0
     }
 
-    fn mul_acc_row(
-        scalar: Word,
-        multiplicand: &Self,
-        acc: &mut Self,
-        carry_in: Word,
-    ) -> Word {
+    fn mul_acc_row(scalar: Word, multiplicand: &Self, acc: &mut Self, carry_in: Word) -> Word {
         let scalar = Limb(scalar);
         let mut carry = Limb(carry_in);
         let mut i = 0;
@@ -40,12 +35,7 @@ impl<const LIMBS: usize> CiosRowOps for Uint<LIMBS> {
         carry.0
     }
 
-    fn mul_acc_shift_row(
-        scalar: Word,
-        multiplicand: &Self,
-        acc: &mut Self,
-        acc_hi: Word,
-    ) -> Word {
+    fn mul_acc_shift_row(scalar: Word, multiplicand: &Self, acc: &mut Self, acc_hi: Word) -> Word {
         let scalar = Limb(scalar);
 
         // Limb 0: compute scalar * multiplicand[0] + acc[0]; discard the low

@@ -32,8 +32,10 @@ mod bit_not;
 mod bit_or;
 mod bit_xor;
 mod bits;
+mod cios;
 mod cmp;
 mod concat;
+mod const_numtraits;
 mod ct;
 mod div;
 pub(crate) mod div_limb;
@@ -58,8 +60,6 @@ mod split;
 mod sqrt;
 mod sub;
 mod sub_mod;
-mod cios;
-mod const_numtraits;
 
 #[cfg(feature = "hybrid-array")]
 mod array;
