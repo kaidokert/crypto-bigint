@@ -14,7 +14,7 @@ keywords = ["arbitrary", "crypto", "bignum", "integer", "precision"]
 readme = "README.md"
 resolver = "2"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.86"
 exclude = [".clippy.toml", ".codecov.yml", ".github", ".gitignore"]
 
 [dependencies]
