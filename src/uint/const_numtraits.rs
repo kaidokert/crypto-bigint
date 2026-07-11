@@ -4,7 +4,8 @@
 // uint.rs without touching them. Every inherent method call uses UFCS to
 // avoid method-resolution ambiguity when both trait and inherent are in scope.
 
-use crate::{Limb, Uint};
+use crate::{Limb, Uint, Word};
+use core::mem::size_of_val;
 
 // ── Identity values ──────────────────────────────────────────────────────────
 
@@ -109,6 +110,378 @@ impl<const LIMBS: usize> const_num_traits::Parity for Uint<LIMBS> {
     }
     fn is_even(self) -> bool {
         self.limbs[0].0 & 1 == 0
+    }
+}
+
+// ── ConstZero / ConstOne (required by PrimBits) ───────────────────────────────
+
+impl<const LIMBS: usize> const_num_traits::ConstZero for Uint<LIMBS> {
+    const ZERO: Self = Self::ZERO;
+}
+
+impl<const LIMBS: usize> const_num_traits::ConstOne for Uint<LIMBS> {
+    const ONE: Self = Self::ONE;
+}
+
+// ── PrimBits ─────────────────────────────────────────────────────────────────
+
+impl<const LIMBS: usize> const_num_traits::PrimBits for Uint<LIMBS> {
+    fn count_ones(self) -> u32 {
+        let mut n = 0u32;
+        let mut i = 0;
+        while i < LIMBS {
+            n += self.limbs[i].0.count_ones();
+            i += 1;
+        }
+        n
+    }
+
+    fn count_zeros(self) -> u32 {
+        let mut n = 0u32;
+        let mut i = 0;
+        while i < LIMBS {
+            n += self.limbs[i].0.count_zeros();
+            i += 1;
+        }
+        n
+    }
+
+    fn leading_zeros(self) -> u32 {
+        let mut n = 0u32;
+        let mut i = LIMBS;
+        while i > 0 {
+            i -= 1;
+            let lz = self.limbs[i].0.leading_zeros();
+            n += lz;
+            if lz < Limb::BITS {
+                break;
+            }
+        }
+        n
+    }
+
+    fn trailing_zeros(self) -> u32 {
+        let mut n = 0u32;
+        let mut i = 0;
+        while i < LIMBS {
+            let tz = self.limbs[i].0.trailing_zeros();
+            n += tz;
+            if tz < Limb::BITS {
+                break;
+            }
+            i += 1;
+        }
+        n
+    }
+
+    fn rotate_left(self, _n: u32) -> Self {
+        todo!()
+    }
+    fn rotate_right(self, _n: u32) -> Self {
+        todo!()
+    }
+    fn signed_shl(self, _n: u32) -> Self {
+        todo!()
+    }
+    fn signed_shr(self, _n: u32) -> Self {
+        todo!()
+    }
+    fn unsigned_shl(self, n: u32) -> Self {
+        Uint::wrapping_shl(&self, n)
+    }
+    fn unsigned_shr(self, n: u32) -> Self {
+        Uint::wrapping_shr(&self, n)
+    }
+    fn swap_bytes(self) -> Self {
+        todo!()
+    }
+    fn from_be(x: Self) -> Self {
+        todo!("{}", size_of_val(&x))
+    }
+    fn from_le(x: Self) -> Self {
+        todo!("{}", size_of_val(&x))
+    }
+    fn to_be(self) -> Self {
+        todo!()
+    }
+    fn to_le(self) -> Self {
+        todo!()
+    }
+}
+
+// ── Byte buffer ───────────────────────────────────────────────────────────────
+//
+// Fixed-size byte buffer: stores [Limb; LIMBS], exposes LIMBS*Limb::BYTES via
+// unsafe ptr cast. Unifies ToBytes::Bytes == FromBytes::Bytes for
+// FixedWidthUnsignedInt compat (rsa_heapless requires they be the same type).
+
+#[derive(Clone, Copy)]
+pub struct BytesHolder<const LIMBS: usize> {
+    limbs: [Limb; LIMBS],
+}
+
+impl<const LIMBS: usize> Default for BytesHolder<LIMBS> {
+    fn default() -> Self {
+        Self {
+            limbs: [Limb::ZERO; LIMBS],
+        }
+    }
+}
+
+impl<const LIMBS: usize> BytesHolder<LIMBS> {
+    #[allow(unsafe_code)]
+    #[inline]
+    fn as_byte_slice(&self) -> &[u8] {
+        // SAFETY: Limb is repr(transparent) over Word; array is valid for
+        // reads of LIMBS * Limb::BYTES bytes from its base address.
+        unsafe {
+            core::slice::from_raw_parts(self.limbs.as_ptr() as *const u8, LIMBS * Limb::BYTES)
+        }
+    }
+
+    #[allow(unsafe_code)]
+    #[inline]
+    fn as_byte_slice_mut(&mut self) -> &mut [u8] {
+        // SAFETY: unique &mut access; same size guarantee as as_byte_slice.
+        unsafe {
+            core::slice::from_raw_parts_mut(
+                self.limbs.as_mut_ptr() as *mut u8,
+                LIMBS * Limb::BYTES,
+            )
+        }
+    }
+}
+
+impl<const LIMBS: usize> AsRef<[u8]> for BytesHolder<LIMBS> {
+    fn as_ref(&self) -> &[u8] {
+        self.as_byte_slice()
+    }
+}
+impl<const LIMBS: usize> AsMut<[u8]> for BytesHolder<LIMBS> {
+    fn as_mut(&mut self) -> &mut [u8] {
+        self.as_byte_slice_mut()
+    }
+}
+impl<const LIMBS: usize> core::borrow::Borrow<[u8]> for BytesHolder<LIMBS> {
+    fn borrow(&self) -> &[u8] {
+        self.as_byte_slice()
+    }
+}
+impl<const LIMBS: usize> core::borrow::BorrowMut<[u8]> for BytesHolder<LIMBS> {
+    fn borrow_mut(&mut self) -> &mut [u8] {
+        self.as_byte_slice_mut()
+    }
+}
+impl<const LIMBS: usize> PartialEq for BytesHolder<LIMBS> {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_byte_slice() == other.as_byte_slice()
+    }
+}
+impl<const LIMBS: usize> Eq for BytesHolder<LIMBS> {}
+impl<const LIMBS: usize> PartialOrd for BytesHolder<LIMBS> {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl<const LIMBS: usize> Ord for BytesHolder<LIMBS> {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        self.as_byte_slice().cmp(other.as_byte_slice())
+    }
+}
+impl<const LIMBS: usize> core::hash::Hash for BytesHolder<LIMBS> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        self.as_byte_slice().hash(state)
+    }
+}
+impl<const LIMBS: usize> core::fmt::Debug for BytesHolder<LIMBS> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "BytesHolder(")?;
+        for b in self.as_byte_slice() {
+            write!(f, "{:02x}", b)?;
+        }
+        write!(f, ")")
+    }
+}
+#[cfg(feature = "zeroize")]
+impl<const LIMBS: usize> zeroize::DefaultIsZeroes for BytesHolder<LIMBS> {}
+
+// ── ToBytes / FromBytes ───────────────────────────────────────────────────────
+
+impl<const LIMBS: usize> const_num_traits::ToBytes for Uint<LIMBS> {
+    type Bytes = BytesHolder<LIMBS>;
+
+    fn to_be_bytes(self) -> BytesHolder<LIMBS> {
+        let mut holder = BytesHolder::default();
+        let bytes = holder.as_byte_slice_mut();
+        let limb_bytes = Limb::BYTES;
+        let mut i = 0;
+        while i < LIMBS {
+            let word_be = self.limbs[LIMBS - 1 - i].0.to_be_bytes();
+            let mut j = 0;
+            while j < limb_bytes {
+                bytes[i * limb_bytes + j] = word_be[j];
+                j += 1;
+            }
+            i += 1;
+        }
+        holder
+    }
+
+    fn to_le_bytes(self) -> BytesHolder<LIMBS> {
+        let mut holder = BytesHolder::default();
+        let bytes = holder.as_byte_slice_mut();
+        let limb_bytes = Limb::BYTES;
+        let mut i = 0;
+        while i < LIMBS {
+            let word_le = self.limbs[i].0.to_le_bytes();
+            let mut j = 0;
+            while j < limb_bytes {
+                bytes[i * limb_bytes + j] = word_le[j];
+                j += 1;
+            }
+            i += 1;
+        }
+        holder
+    }
+}
+
+impl<const LIMBS: usize> const_num_traits::ToBytes for &Uint<LIMBS> {
+    type Bytes = BytesHolder<LIMBS>;
+
+    fn to_be_bytes(self) -> BytesHolder<LIMBS> {
+        const_num_traits::ToBytes::to_be_bytes(*self)
+    }
+
+    fn to_le_bytes(self) -> BytesHolder<LIMBS> {
+        const_num_traits::ToBytes::to_le_bytes(*self)
+    }
+}
+
+impl<const LIMBS: usize> const_num_traits::FromBytes for Uint<LIMBS> {
+    type Bytes = BytesHolder<LIMBS>;
+
+    fn from_be_bytes(bytes: &BytesHolder<LIMBS>) -> Self {
+        let bytes = bytes.as_byte_slice();
+        let mut limbs = [Limb::ZERO; LIMBS];
+        let limb_bytes = Limb::BYTES;
+        let mut i = 0;
+        while i < LIMBS {
+            let start = i * limb_bytes;
+            let mut word: Word = 0;
+            let mut j = 0;
+            while j < limb_bytes {
+                word = (word << 8) | (bytes[start + j] as Word);
+                j += 1;
+            }
+            limbs[LIMBS - 1 - i] = Limb(word);
+            i += 1;
+        }
+        Uint::new(limbs)
+    }
+
+    fn from_le_bytes(bytes: &BytesHolder<LIMBS>) -> Self {
+        let bytes = bytes.as_byte_slice();
+        let mut limbs = [Limb::ZERO; LIMBS];
+        let limb_bytes = Limb::BYTES;
+        let mut i = 0;
+        while i < LIMBS {
+            let start = i * limb_bytes;
+            let mut word: Word = 0;
+            let mut j = 0;
+            while j < limb_bytes {
+                word |= (bytes[start + j] as Word) << (j * 8);
+                j += 1;
+            }
+            limbs[i] = Limb(word);
+            i += 1;
+        }
+        Uint::new(limbs)
+    }
+}
+
+// ── FromByteSlice ─────────────────────────────────────────────────────────────
+
+impl<const LIMBS: usize> const_num_traits::FromByteSlice for Uint<LIMBS> {
+    fn from_be_slice(
+        bytes: &[u8],
+    ) -> Result<Self, const_num_traits::ops::byte_slice::ByteSliceError> {
+        use const_num_traits::ops::byte_slice::{ByteSliceError, ByteSliceErrorKind};
+        if bytes.is_empty() {
+            return Err(ByteSliceError {
+                kind: ByteSliceErrorKind::Empty,
+            });
+        }
+        let capacity = LIMBS * Limb::BYTES;
+        if bytes.len() > capacity {
+            return Err(ByteSliceError {
+                kind: ByteSliceErrorKind::Overflow,
+            });
+        }
+        let mut limbs = [Limb::ZERO; LIMBS];
+        let mut remaining = bytes;
+        let mut limb_idx = 0usize;
+        while limb_idx < LIMBS && !remaining.is_empty() {
+            let chunk_len = if remaining.len() >= Limb::BYTES {
+                Limb::BYTES
+            } else {
+                remaining.len()
+            };
+            let (head, tail) = remaining.split_at(remaining.len() - chunk_len);
+            limbs[limb_idx] = Limb::from_be_slice(tail);
+            remaining = head;
+            limb_idx += 1;
+        }
+        Ok(Uint::new(limbs))
+    }
+
+    fn from_le_slice(
+        bytes: &[u8],
+    ) -> Result<Self, const_num_traits::ops::byte_slice::ByteSliceError> {
+        use const_num_traits::ops::byte_slice::{ByteSliceError, ByteSliceErrorKind};
+        if bytes.is_empty() {
+            return Err(ByteSliceError {
+                kind: ByteSliceErrorKind::Empty,
+            });
+        }
+        let capacity = LIMBS * Limb::BYTES;
+        if bytes.len() > capacity {
+            return Err(ByteSliceError {
+                kind: ByteSliceErrorKind::Overflow,
+            });
+        }
+        let mut limbs = [Limb::ZERO; LIMBS];
+        let mut remaining = bytes;
+        let mut limb_idx = 0usize;
+        while limb_idx < LIMBS && !remaining.is_empty() {
+            let chunk_len = if remaining.len() >= Limb::BYTES {
+                Limb::BYTES
+            } else {
+                remaining.len()
+            };
+            let (chunk, tail) = remaining.split_at(chunk_len);
+            limbs[limb_idx] = Limb::from_le_slice(chunk);
+            remaining = tail;
+            limb_idx += 1;
+        }
+        Ok(Uint::new(limbs))
+    }
+}
+
+// ── &Uint wrapping ops (needed by ed25519 verify for<'a> &'a T bounds) ───────
+
+impl<const LIMBS: usize> const_num_traits::ops::wrapping::WrappingAdd for &Uint<LIMBS> {
+    type Output = Uint<LIMBS>;
+
+    fn wrapping_add(self, v: Self) -> Uint<LIMBS> {
+        Uint::wrapping_add(self, v)
+    }
+}
+
+impl<const LIMBS: usize> const_num_traits::ops::wrapping::WrappingSub for &Uint<LIMBS> {
+    type Output = Uint<LIMBS>;
+
+    fn wrapping_sub(self, v: Self) -> Uint<LIMBS> {
+        Uint::wrapping_sub(self, v)
     }
 }
 
