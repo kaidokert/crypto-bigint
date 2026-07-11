@@ -72,6 +72,14 @@ impl<const LIMBS: usize> const_num_traits::ops::overflowing::OverflowingAdd for 
     }
 }
 
+impl<const LIMBS: usize> const_num_traits::ops::overflowing::OverflowingSub for Uint<LIMBS> {
+    type Output = Self;
+    fn overflowing_sub(self, v: Self) -> (Self, bool) {
+        let (result, borrow) = Uint::borrowing_sub(&self, &v, Limb::ZERO);
+        (result, borrow != Limb::ZERO)
+    }
+}
+
 // ── Carrying / borrowing arithmetic ──────────────────────────────────────────
 
 impl<const LIMBS: usize> const_num_traits::BorrowingSub for Uint<LIMBS> {
