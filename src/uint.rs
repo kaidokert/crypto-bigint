@@ -37,6 +37,8 @@ mod cmp;
 mod concat;
 mod const_numtraits;
 mod ct;
+#[cfg(feature = "subtle")]
+pub(crate) mod ct_wrapper;
 mod div;
 pub(crate) mod div_limb;
 pub(crate) mod encoding;

@@ -178,6 +178,8 @@ pub use crate::{
 
 pub use cpubits::cpubits;
 pub use ctutils::{self, Choice, CtOption};
+#[cfg(feature = "subtle")]
+pub use crate::uint::ct_wrapper::Ct;
 
 #[cfg(feature = "alloc")]
 pub use crate::uint::boxed::BoxedUint;
