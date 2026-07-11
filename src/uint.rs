@@ -58,6 +58,8 @@ mod split;
 mod sqrt;
 mod sub;
 mod sub_mod;
+mod cios;
+mod const_numtraits;
 
 #[cfg(feature = "hybrid-array")]
 mod array;
