@@ -411,6 +411,15 @@ impl<const LIMBS: usize, Rhs: Unsigned> Rem<Rhs> for &Uint<LIMBS> {
     }
 }
 
+impl<const LIMBS: usize> Div<&Uint<LIMBS>> for &Uint<LIMBS> {
+    type Output = Uint<LIMBS>;
+
+    #[inline]
+    fn div(self, rhs: &Uint<LIMBS>) -> Self::Output {
+        *self / *rhs
+    }
+}
+
 impl<const LIMBS: usize> Rem<&Uint<LIMBS>> for &Uint<LIMBS> {
     type Output = Uint<LIMBS>;
 
