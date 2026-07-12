@@ -72,6 +72,22 @@ impl<const LIMBS: usize> const_num_traits::ops::overflowing::OverflowingAdd for 
     }
 }
 
+impl<const LIMBS: usize> const_num_traits::ops::checked::CheckedAdd for Uint<LIMBS> {
+    type Output = Self;
+    fn checked_add(self, v: Self) -> Option<Self> {
+        let (result, carry) = Uint::carrying_add(&self, &v, Limb::ZERO);
+        if carry != Limb::ZERO { None } else { Some(result) }
+    }
+}
+
+impl<const LIMBS: usize> const_num_traits::ops::checked::CheckedMul for Uint<LIMBS> {
+    type Output = Self;
+    fn checked_mul(self, v: Self) -> Option<Self> {
+        let (lo, overflow) = self.overflowing_mul(&v);
+        if bool::from(overflow) { None } else { Some(lo) }
+    }
+}
+
 impl<const LIMBS: usize> const_num_traits::ops::overflowing::OverflowingSub for Uint<LIMBS> {
     type Output = Self;
     fn overflowing_sub(self, v: Self) -> (Self, bool) {
