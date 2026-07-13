@@ -88,6 +88,12 @@ impl<const LIMBS: usize> const_num_traits::ops::checked::CheckedMul for Uint<LIM
     }
 }
 
+impl<const LIMBS: usize> const_num_traits::ops::bits::BitsPrecision for Uint<LIMBS> {
+    fn bits_precision(self) -> u32 {
+        Self::BITS
+    }
+}
+
 impl<const LIMBS: usize> const_num_traits::ops::overflowing::OverflowingSub for Uint<LIMBS> {
     type Output = Self;
     fn overflowing_sub(self, v: Self) -> (Self, bool) {

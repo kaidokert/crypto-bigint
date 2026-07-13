@@ -21,7 +21,7 @@ exclude = [".clippy.toml", ".codecov.yml", ".github", ".gitignore"]
 cpubits = "0.1"
 ctutils = "0.4"
 num-traits = { version = "0.2.19", default-features = false }
-const-num-traits = { version = "0.2", default-features = false, features = ["ct"] }
+const-num-traits = { git = "https://github.com/kaidokert/num-traits", tag = "v0.2.1-alpha.1", default-features = false, features = ["ct"] }
 modmath-cios = { version = "0.1" }
 
 # optional dependencies
