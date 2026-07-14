@@ -94,6 +94,12 @@ impl<const LIMBS: usize> const_num_traits::ops::bits::BitsPrecision for Uint<LIM
     }
 }
 
+impl<const LIMBS: usize> const_num_traits::ops::bits::WithPrecision for Uint<LIMBS> {
+    fn widen_to_precision(self, _bits_precision: u32) -> Self {
+        self
+    }
+}
+
 impl<const LIMBS: usize> const_num_traits::ops::overflowing::OverflowingSub for Uint<LIMBS> {
     type Output = Self;
     fn overflowing_sub(self, v: Self) -> (Self, bool) {
