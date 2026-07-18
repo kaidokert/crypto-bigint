@@ -108,6 +108,15 @@ impl<const LIMBS: usize> const_num_traits::ops::overflowing::OverflowingSub for 
     }
 }
 
+impl<const LIMBS: usize> const_num_traits::ops::overflowing::OverflowingMul for Uint<LIMBS> {
+    type Output = Self;
+    fn overflowing_mul(self, v: Self) -> (Self, bool) {
+        // Call via &self to resolve to the inherent method, not this trait impl.
+        let (lo, overflow) = (&self).overflowing_mul(&v);
+        (lo, bool::from(overflow))
+    }
+}
+
 // ── Carrying / borrowing arithmetic ──────────────────────────────────────────
 
 impl<const LIMBS: usize> const_num_traits::BorrowingSub for Uint<LIMBS> {
