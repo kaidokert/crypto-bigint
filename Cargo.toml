@@ -14,13 +14,15 @@ keywords = ["arbitrary", "crypto", "bignum", "integer", "precision"]
 readme = "README.md"
 resolver = "2"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.86"
 exclude = [".clippy.toml", ".codecov.yml", ".github", ".gitignore"]
 
 [dependencies]
 cpubits = "0.1"
 ctutils = "0.4"
 num-traits = { version = "0.2.19", default-features = false }
+const-num-traits = { version = "0.2.1", default-features = false, features = ["ct"] }
+modmath-cios = { version = "0.1" }
 
 # optional dependencies
 der = { version = "0.8", optional = true, default-features = false }
